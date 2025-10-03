@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Stock Approval Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .request-card {
+            transition: all 0.3s ease;
+        }
+        .request-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .pulsating-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+            70% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+        }
+        .tab-button.active {
+            color: #4f46e5;
+            border-bottom: 3px solid #4f46e5;
+            font-weight: 600;
+        }
+        .admin-table th, .admin-table td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+        .admin-table thead th {
+            background-color: #f9fafb;
+            color: #4b5563;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .admin-table tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .admin-table tbody tr:last-child {
+            border-bottom: none;
+        }
+        .admin-table tbody tr:hover {
+            background-color: #fefefe;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+
+    <div id="messageModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4">Notification</h3>
+            <p id="modalBody" class="text-sm text-gray-600 mb-6"></p>
+            <div class="flex justify-end">
+                <button onclick="hideModal('messageModal')" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="main-container flex justify-between items-center py-4 px-6 md:px-8">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="shield-check" class="text-indigo-600 w-7 h-7"></i>
+                <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
+                    Admin Approval Panel
+                </h1>
+            </div>
+
+            <nav class="flex space-x-2 sm:space-x-4 border-b border-gray-200 overflow-x-auto pb-2 -mb-2">
+                <button id="pendingTabBtn" class="tab-button px-3 py-2 text-sm text-gray-600 active whitespace-nowrap" onclick="switchView('pending')">
+                    <i data-lucide="clock-2" class="w-4 h-4 inline-block mr-1"></i>
+                    Pending (<span id="pendingCount">0</span>)
+                </button>
+                <button id="historyTabBtn" class="tab-button px-3 py-2 text-sm text-gray-600 whitespace-nowrap" onclick="switchView('history')">
+                    <i data-lucide="history" class="w-4 h-4 inline-block mr-1"></i>
+                    History
+                </button>
+                <button id="totalsTabBtn" class="tab-button px-3 py-2 text-sm text-gray-600 whitespace-nowrap" onclick="switchView('totals')">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 inline-block mr-1"></i>
+                    Totals
+                </button>
+                <button id="deliveryTabBtn" class="tab-button px-3 py-2 text-sm text-gray-600 whitespace-nowrap" onclick="switchView('delivery')">
+                    <i data-lucide="package-check" class="w-4 h-4 inline-block mr-1"></i>
+                    Delivery
+                </button>
+                
+                <a href="stock.html" class="tab-button px-3 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:border-b-indigo-300 transition whitespace-nowrap">In-Store Stock</a>
+                <a href="distributors.html" class="tab-button px-3 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:border-b-indigo-300 transition whitespace-nowrap">Distributors</a>
+                <a href="grn.html" class="tab-button px-3 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:border-b-indigo-300 transition whitespace-nowrap">GRN</a>
+                <a href="invoice.html" class="tab-button px-3 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:border-b-indigo-300 transition whitespace-nowrap">Invoice</a>
+                <a href="first.html" class="tab-button px-3 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:border-b-indigo-300 transition whitespace-nowrap">first page</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <span id="userIdDisplay" class="text-xs font-medium text-gray-500 hidden md:inline-block">User ID: Loading...</span>
+                <button onclick="logout()" class="p-2 text-gray-500 hover:text-red-500 transition duration-150 rounded-full hover:bg-gray-100">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container mt-6">
+        
+        <section id="pendingView" class="view-content space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Pending Requests for Approval</h2>
+            <div id="pendingList" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <p class="text-gray-500 col-span-full" id="noPendingMessage">No pending requests at the moment.</p>
+            </div>
+        </section>
+
+        <section id="historyView" class="view-content hidden">
+            <div class="flex justify-between items-center border-b pb-2 mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Request History by Month</h2>
+                <button onclick="downloadAllHistoryPDF()" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                    Download All History PDF
+                </button>
+            </div>
+            <div id="monthlyFoldersContainer" class="space-y-4">
+                </div>
+            <div id="noHistoryMessage" class="p-6 text-center text-gray-500 hidden bg-white rounded-xl shadow-md mt-4">
+                No approved or rejected requests found yet.
+            </div>
+        </section>
+
+        <section id="totalsView" class="view-content hidden">
+            <h2 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Total Stock Overview</h2>
+            <div class="p-8 bg-white rounded-xl shadow-md">
+                <p class="text-gray-600">This section will show the combined totals from all stock locations (e.g., Kansanshi, Kalumbila).</p>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-5 bg-indigo-50 rounded-xl shadow-sm border border-indigo-200">
+                        <p class="text-sm font-medium text-indigo-700">Total Unique Items</p>
+                        <p class="text-3xl font-bold text-indigo-900 mt-1">450</p>
+                    </div>
+                    <div class="p-5 bg-green-50 rounded-xl shadow-sm border border-green-200">
+                        <p class="text-sm font-medium text-green-700">Total Approved Value</p>
+                        <p class="text-3xl font-bold text-green-900 mt-1">$1.2M</p>
+                    </div>
+                    <div class="p-5 bg-yellow-50 rounded-xl shadow-sm border border-yellow-200">
+                        <p class="text-sm font-medium text-yellow-700">Pending Requests</p>
+                        <p class="text-3xl font-bold text-yellow-900 mt-1" id="totalPendingDisplay">12</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="deliveryView" class="view-content hidden">
+            <h2 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Manage Delivery Notes</h2>
+            <div class="p-8 bg-white rounded-xl shadow-md">
+                <p class="text-gray-600">This section will contain links or embedded functionality for managing and viewing delivery notes.</p>
+                <button onclick="alert('Delivery notes feature coming soon!')" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 transition">
+                    Manage Delivery Notes
+                    <i data-lucide="package-check" class="w-4 h-4 ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+<script>
+    let fullHistoryData = [];
+    let currentUserId = null;
+    let currentView = 'pending';
+
+    // --- Utility Functions ---
+
+    function showMessage(title, message) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalBody').textContent = message;
+        document.getElementById('messageModal').classList.remove('hidden');
+    }
+
+    function hideModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    function formatDate(timestamp) {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds ? timestamp.seconds * 1000 : timestamp);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    function logout() {
+        showMessage('Logged Out', 'You have been successfully logged out. (Simulated)');
+        setTimeout(() => {
+            console.log('Simulating redirect to login page.');
+        }, 800);
+    }
+
+    // --- View/Tab Switching Logic ---
+
+    function switchView(view) {
+        if (currentView === view) return;
+
+        document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+        
+        document.querySelectorAll('.tab-button').forEach(el => {
+            if (el.tagName === 'BUTTON') {
+                el.classList.remove('active');
+            }
+        });
+
+        const viewElement = document.getElementById(`${view}View`);
+        const tabButton = document.getElementById(`${view}TabBtn`);
+
+        if (viewElement) viewElement.classList.remove('hidden');
+        if (tabButton) tabButton.classList.add('active');
+
+        currentView = view;
+        
+        if (view === 'history') {
+             renderMonthlyFolders(fullHistoryData);
+        }
+    }
+
+    window.logout = logout;
+    window.hideModal = hideModal;
+    window.switchView = switchView;
+
+    // --- Rendering Functions ---
+
+    function renderPendingCard(request) {
+        const statusColor = 'bg-yellow-500'; 
+        const statusText = 'PENDING';
+
+        return `
+            <div class="request-card bg-white rounded-xl shadow-lg border border-gray-100 p-6 space-y-4">
+                <div class="flex justify-between items-start">
+                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${statusColor} text-white">
+                        <span class="pulsating-dot mr-2"></span>
+                        ${statusText}
+                    </span>
+                    <span class="text-xs font-medium text-gray-400">${formatDate(request.timestamp)}</span>
+                </div>
+                
+                <p class="text-2xl font-bold text-gray-900">${request.itemCode}</p>
+                <p class="text-sm text-gray-600 line-clamp-2">${request.itemDescription}</p>
+
+                <div class="pt-2 border-t border-gray-100 space-y-2">
+                    <p class="text-sm text-gray-700">PO Number: <span class="font-bold">${request.poNumber || 'N/A'}</span></p>
+                    <p class="text-sm text-gray-700">Quantity Requested: <span class="font-bold text-lg text-indigo-600">${request.quantity}</span></p>
+                    <p class="text-xs text-gray-500">Reason: ${request.reason || 'N/A'}</p>
+                    <p class="text-xs text-gray-500">Requested by: ${request.userId.substring(0, 8)}...</p>
+                </div>
+
+                <div class="flex space-x-3 pt-3 border-t">
+                    <button class="flex-1 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 transition approve-btn" 
+                            data-request='${JSON.stringify(request)}' data-action="approve">
+                        <i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i>
+                        Approve
+                    </button>
+                    <button class="flex-1 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition reject-btn"
+                            data-request='${JSON.stringify(request)}' data-action="reject">
+                        <i data-lucide="x" class="w-4 h-4 inline-block mr-1"></i>
+                        Reject
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderPendingView(data) {
+        const pendingList = document.getElementById('pendingList');
+        const noPendingMessage = document.getElementById('noPendingMessage');
+        const pendingCount = document.getElementById('pendingCount');
+        const totalPendingDisplay = document.getElementById('totalPendingDisplay');
+
+        const pendingRequests = data.filter(r => r.status === 'PENDING');
+        pendingCount.textContent = pendingRequests.length;
+        if (totalPendingDisplay) totalPendingDisplay.textContent = pendingRequests.length;
+
+        pendingList.innerHTML = '';
+        
+        if (pendingRequests.length === 0) {
+            noPendingMessage.classList.remove('hidden');
+            pendingList.appendChild(noPendingMessage);
+        } else {
+            noPendingMessage.classList.add('hidden');
+            pendingRequests.forEach(request => {
+                pendingList.insertAdjacentHTML('beforeend', renderPendingCard(request));
+            });
+            lucide.createIcons();
+        }
+    }
+
+    function getStatusColor(status) {
+        if (status === 'APPROVED') return 'bg-green-100 text-green-700';
+        if (status === 'REJECTED') return 'bg-red-100 text-red-700';
+        return 'bg-gray-100 text-gray-800';
+    }
+
+    function renderHistoryRow(request) {
+        const statusColor = getStatusColor(request.status);
+        let actionButton = '';
+
+        if (request.status === 'REJECTED') {
+            actionButton = `<button class="re-approve-btn text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition" 
+                                    data-request='${JSON.stringify(request)}'>
+                                <i data-lucide="rotate-ccw" class="w-3 h-3 inline-block mr-1"></i>
+                                Re-Approve
+                            </button>`;
+        }
+        
+        return `
+            <tr class="text-sm">
+                <td>${formatDate(request.timestamp).split(',')[0]}</td>
+                <td>${request.poNumber || 'N/A'}</td>
+                <td class="font-medium text-gray-900">${request.itemCode}</td>
+                <td class="text-gray-600">${request.itemDescription}</td>
+                <td class="font-bold text-base">${request.quantity}</td>
+                <td>
+                    <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${statusColor}">
+                        ${request.status}
+                    </span>
+                </td>
+                <td>${actionButton}</td>
+            </tr>
+        `;
+    }
+
+    function renderMonthlyFolders(data) {
+        const container = document.getElementById('monthlyFoldersContainer');
+        const noHistoryMessage = document.getElementById('noHistoryMessage');
+        
+        const historyData = data.filter(r => r.status !== 'PENDING').sort((a, b) => {
+            const timeA = a.timestamp.seconds ? a.timestamp.seconds * 1000 : a.timestamp;
+            const timeB = b.timestamp.seconds ? b.timestamp.seconds * 1000 : b.timestamp;
+            return timeB - timeA;
+        });
+
+        if (historyData.length === 0) {
+            noHistoryMessage.classList.remove('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        noHistoryMessage.classList.add('hidden');
+        
+        const groupedByMonth = historyData.reduce((acc, request) => {
+            const date = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp.seconds ? request.timestamp.seconds * 1000 : request.timestamp);
+            const monthKey = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0');
+            const monthName = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            
+            if (!acc[monthKey]) {
+                acc[monthKey] = {
+                    name: monthName,
+                    requests: []
+                };
+            }
+            acc[monthKey].requests.push(request);
+            return acc;
+        }, {});
+        
+        let foldersHtml = '';
+        
+        const sortedMonthKeys = Object.keys(groupedByMonth).sort().reverse();
+
+        sortedMonthKeys.forEach((monthKey, index) => {
+            const group = groupedByMonth[monthKey];
+            const contentId = `month-content-${monthKey}`;
+            
+            const approvedCount = group.requests.filter(r => r.status === 'APPROVED').length;
+            const rejectedCount = group.requests.filter(r => r.status === 'REJECTED').length;
+
+            const isInitiallyOpen = index === 0;
+            
+            let tableBodyHtml = '';
+            group.requests.forEach(request => {
+                tableBodyHtml += renderHistoryRow(request);
+            });
+
+            foldersHtml += `
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                    <button class="flex justify-between items-center w-full p-4 text-left font-semibold text-gray-800 hover:bg-gray-50 transition"
+                            onclick="toggleMonthContent('${contentId}', this)">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="folder" class="w-5 h-5 text-indigo-500 toggle-icon"></i>
+                            <span class="text-lg">${group.name}</span>
+                            <span class="text-sm font-normal text-gray-500">(${group.requests.length} total)</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                Approved: ${approvedCount}
+                            </span>
+                            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                                Rejected: ${rejectedCount}
+                            </span>
+                            <i data-lucide="${isInitiallyOpen ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5 text-gray-500 transition ml-4"></i>
+                        </div>
+                    </button>
+
+                    <div id="${contentId}" class="overflow-x-auto ${isInitiallyOpen ? '' : 'hidden'}">
+                        <table class="admin-table min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="w-1/12">Date</th>
+                                    <th class="w-1/12">PO No.</th>
+                                    <th class="w-2/12">Item Code</th>
+                                    <th class="w-3/12">Description</th>
+                                    <th class="w-1/12">Qty</th>
+                                    <th class="w-2/12">Status</th>
+                                    <th class="w-1/12">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                ${tableBodyHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = foldersHtml;
+        lucide.createIcons();
+    }
+
+    function toggleMonthContent(contentId, buttonElement) {
+        const content = document.getElementById(contentId);
+        const icon = buttonElement.querySelector('i:last-child'); 
+        
+        content.classList.toggle('hidden');
+        
+        if (content.classList.contains('hidden')) {
+            icon.setAttribute('data-lucide', 'chevron-down');
+        } else {
+            icon.setAttribute('data-lucide', 'chevron-up');
+        }
+        lucide.createIcons();
+    }
+
+    window.toggleMonthContent = toggleMonthContent;
+    
+    // --- PDF Download Function ---
+    
+    function downloadAllHistoryPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const historyData = fullHistoryData.filter(r => r.status !== 'PENDING').sort((a, b) => {
+            const timeA = a.timestamp.seconds ? a.timestamp.seconds * 1000 : a.timestamp;
+            const timeB = b.timestamp.seconds ? b.timestamp.seconds * 1000 : b.timestamp;
+            return timeB - timeA;
+        });
+        
+        if (historyData.length === 0) {
+            showMessage('No Data', 'There is no history data to export.');
+            return;
+        }
+        
+        const approvedCount = historyData.filter(r => r.status === 'APPROVED').length;
+        const rejectedCount = historyData.filter(r => r.status === 'REJECTED').length;
+        const totalQuantity = historyData.reduce((sum, r) => sum + parseInt(r.quantity, 10), 0);
+        
+        doc.setFontSize(20);
+        doc.setFont(undefined, 'bold');
+        doc.text('Complete Stock Approval History Report', 14, 22);
+        
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 32);
+        doc.text(`Report Period: All Time`, 14, 38);
+        
+        doc.setDrawColor(79, 70, 229);
+        doc.setLineWidth(0.5);
+        doc.rect(14, 44, 182, 24);
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Summary Statistics:', 18, 52);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Total Records: ${historyData.length}`, 18, 58);
+        doc.setTextColor(34, 139, 34);
+        doc.text(`Approved: ${approvedCount}`, 70, 58);
+        doc.setTextColor(220, 20, 60);
+        doc.text(`Rejected: ${rejectedCount}`, 110, 58);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Total Quantity: ${totalQuantity}`, 150, 58);
+        
+        doc.setFontSize(10);
+        doc.text(`User: ${currentUserId || 'N/A'}`, 18, 64);
+        
+        const groupedByMonth = historyData.reduce((acc, request) => {
+            const date = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp.seconds ? request.timestamp.seconds * 1000 : request.timestamp);
+            const monthKey = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0');
+            const monthName = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            
+            if (!acc[monthKey]) {
+                acc[monthKey] = {
+                    name: monthName,
+                    requests: []
+                };
+            }
+            acc[monthKey].requests.push(request);
+            return acc;
+        }, {});
+        
+        const sortedMonthKeys = Object.keys(groupedByMonth).sort().reverse();
+        
+        let currentY = 75;
+        
+        sortedMonthKeys.forEach((monthKey, index) => {
+            const group = groupedByMonth[monthKey];
+            
+            if (currentY > 250) {
+                doc.addPage();
+                currentY = 20;
+            }
+            
+            doc.setFontSize(13);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(79, 70, 229);
+            doc.text(`${group.name} (${group.requests.length} records)`, 14, currentY);
+            doc.setTextColor(0, 0, 0);
+            currentY += 7;
+            
+            const tableData = group.requests.map(req => [
+                formatDate(req.timestamp).split(',')[0],
+                req.poNumber || 'N/A',
+                req.itemCode,
+                req.itemDescription.length > 35 ? req.itemDescription.substring(0, 32) + '...' : req.itemDescription,
+                req.quantity.toString(),
+                req.status,
+                req.reason ? (req.reason.length > 25 ? req.reason.substring(0, 22) + '...' : req.reason) : 'N/A'
+            ]);
+            
+            doc.autoTable({
+                startY: currentY,
+                head: [['Date', 'PO No.', 'Item Code', 'Description', 'Qty', 'Status', 'Reason']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [79, 70, 229],
+                    fontSize: 8,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    fontSize: 7,
+                    cellPadding: 2
+                },
+                columnStyles: {
+                    0: { cellWidth: 22, halign: 'center' },
+                    1: { cellWidth: 20, halign: 'center' },
+                    2: { cellWidth: 22, halign: 'center' },
+                    3: { cellWidth: 50 },
+                    4: { cellWidth: 12, halign: 'center' },
+                    5: { cellWidth: 20, halign: 'center' },
+                    6: { cellWidth: 36 }
+                },
+                didParseCell: function(data) {
+                    if (data.column.index === 5 && data.section === 'body') {
+                        if (data.cell.raw === 'APPROVED') {
+                            data.cell.styles.textColor = [34, 139, 34];
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (data.cell.raw === 'REJECTED') {
+                            data.cell.styles.textColor = [220, 20, 60];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                },
+                margin: { left: 14, right: 14 }
+            });
+            
+            currentY = doc.lastAutoTable.finalY + 10;
+        });
+        
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(
+                `Admin Stock Approval Dashboard - Page ${i} of ${pageCount}`,
+                doc.internal.pageSize.getWidth() / 2,
+                doc.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
+        }
+        
+        const fileName = `Complete_Stock_History_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        
+        showMessage('Success', `PDF report generated successfully with ${historyData.length} records!`);
+    }
+    
+    window.downloadAllHistoryPDF = downloadAllHistoryPDF;
+    
+    // --- Data Management and Initialization ---
+
+    function loadDataFromLocalStorage() {
+        const storedRequests = JSON.parse(localStorage.getItem('approvalRequests')) || [];
+        
+        if (storedRequests.length === 0) {
+            const now = Date.now();
+            fullHistoryData = [
+                { id: 'p001', poNumber: 'ADJ-1001', itemCode: 'ITEM-A1', itemDescription: 'High-power Servo Motor, 24V', quantity: 5, adjustmentType: 'increase', reason: 'Initial count correction', status: 'PENDING', userId: 'user123', timestamp: now - 3600000 },
+                { id: 'h001', poNumber: 'PO-999', itemCode: 'ITEM-C3', itemDescription: 'Safety Goggles, clear lens', quantity: 50, status: 'APPROVED', userId: 'user123', timestamp: now - 86400000 * 5 },
+                { id: 'h003', poNumber: 'PO-997', itemCode: 'ITEM-E5', itemDescription: 'Hydraulic Pump Assembly', quantity: 1, status: 'REJECTED', userId: 'user789', timestamp: now - 86400000 * 10 },
+                { id: 'h004', poNumber: 'PO-996', itemCode: 'ITEM-F6', itemDescription: 'Spare Gasket Set', quantity: 10, status: 'APPROVED', userId: 'user123', timestamp: now - 86400000 * 40 },
+                { id: 'h005', poNumber: 'PO-995', itemCode: 'ITEM-G7', itemDescription: 'Heavy Duty Cable Tie', quantity: 100, status: 'APPROVED', userId: 'user456', timestamp: now - 86400000 * 70 },
+            ];
+            localStorage.setItem('approvalRequests', JSON.stringify(fullHistoryData));
+        } else {
+             fullHistoryData = storedRequests;
+        }
+
+        renderPendingView(fullHistoryData);
+        
+        currentUserId = 'admin-user-abcde';
+        document.getElementById('userIdDisplay').textContent = `User ID: ${currentUserId}`;
+    }
+    
+    // --- Core Action Logic ---
+
+    function processRequest(request, action) {
+        if (!currentUserId) {
+             showMessage('Authentication Error', 'User is not authenticated. Please log in again.');
+             return;
+        }
+
+        let newStatus;
+        let successMessage;
+        
+        if (action === 'approve' || action === 're-approve') {
+            newStatus = 'APPROVED';
+            successMessage = `Request ${request.id} for ${request.itemCode} has been ${action === 'approve' ? 'APPROVED' : 'RE-APPROVED'}.`;
+        } else if (action === 'reject') {
+            newStatus = 'REJECTED';
+            successMessage = `Request ${request.id} for ${request.itemCode} has been REJECTED.`;
+        } else {
+             showMessage('Invalid Action', 'Unknown action requested.');
+             return;
+        }
+        
+        const index = fullHistoryData.findIndex(r => r.id === request.id);
+        if (index !== -1) {
+            
+            if (newStatus === 'APPROVED') {
+                const stockDataRaw = localStorage.getItem('inStoreStockData');
+                let stockData = stockDataRaw ? JSON.parse(stockDataRaw) : {};
+
+                if (stockData[request.itemCode]) {
+                    const adjustmentAmount = parseInt(request.quantity, 10);
+                    
+                    stockData[request.itemCode].currentStock += adjustmentAmount;
+                    
+                    if (!stockData[request.itemCode].history) {
+                         stockData[request.itemCode].history = [];
+                    }
+                    stockData[request.itemCode].history.push({
+                        date: new Date().toLocaleString(),
+                        type: 'Admin ' + (request.adjustmentType || 'Approval'),
+                        amount: adjustmentAmount,
+                        note: request.reason || `Admin approved adjustment (PO: ${request.poNumber || 'N/A'})`
+                    });
+
+                    localStorage.setItem('inStoreStockData', JSON.stringify(stockData));
+                }
+            }
+
+            fullHistoryData[index].status = newStatus;
+            fullHistoryData[index].timestamp = Date.now();
+            
+            localStorage.setItem('approvalRequests', JSON.stringify(fullHistoryData));
+            
+            renderPendingView(fullHistoryData);
+            
+            if (currentView === 'history') {
+                renderMonthlyFolders(fullHistoryData);
+            }
+            
+            showMessage(newStatus === 'APPROVED' ? 'Success!' : 'Action Complete', successMessage);
+
+            if (currentView === 'pending' && action !== 're-approve') {
+                switchView('history');
+            }
+        } else {
+            showMessage('Error', `Could not find request ID: ${request.id} in the database.`);
+        }
+    }
+
+    // --- Global Event Listener ---
+
+    document.addEventListener('click', (e) => {
+        let target = e.target;
+        let action = target.getAttribute('data-action');
+        let requestString = target.getAttribute('data-request');
+        
+        if (!action && target.closest('button')) {
+            target = target.closest('button');
+            action = target.getAttribute('data-action');
+            requestString = target.getAttribute('data-request');
+        }
+
+        if (action && requestString) {
+            try {
+                const request = JSON.parse(requestString);
+                processRequest(request, action);
+            } catch (error) {
+                 console.error("Failed to parse request data:", error);
+                 showMessage('Data Error', 'Could not process request data.');
+            }
+        } 
+        else if (target.classList.contains('re-approve-btn')) {
+            const reqString = target.getAttribute('data-request');
+            
+            if (reqString) {
+                try {
+                    const request = JSON.parse(reqString);
+                    if (request.status === 'REJECTED') {
+                        processRequest(request, 're-approve');
+                    } else {
+                        showMessage('Invalid Action', `This request has status: ${request.status}. Only REJECTED items can be re-approved.`);
+                    }
+                } catch (error) {
+                    console.error("Failed to parse request data:", error);
+                    showMessage('Data Error', 'Could not process request data.');
+                }
+            }
+        }
+    });
+
+    // --- Initialization ---
+
+    document.addEventListener('DOMContentLoaded', () => {
+         lucide.createIcons();
+         loadDataFromLocalStorage();
+    });
+</script>
+</body>
+</html>

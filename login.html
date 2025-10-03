@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual Role Login & Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for appearance */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        /* Active state for both main view tabs and inner role tabs */
+        .view-tab-button.active,
+        .role-tab-button.active {
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="w-full max-w-lg mx-auto p-4 sm:p-8">
+    <div class="login-card bg-white rounded-xl overflow-hidden">
+        
+        <header class="p-6 bg-indigo-500 text-white">
+            <h1 class="text-3xl font-extrabold text-center">Authentication System</h1>
+        </header>
+
+        <div class="p-6 sm:p-8">
+            <div class="flex p-1 mb-6 bg-gray-100 rounded-lg">
+                <button id="loginTab" onclick="selectView('login')" 
+                        class="view-tab-button w-1/2 py-3 text-center text-sm font-semibold rounded-lg transition-all active">
+                    Login
+                </button>
+                <button id="registerTab" onclick="selectView('register')" 
+                        class="view-tab-button w-1/2 py-3 text-center text-sm font-semibold text-gray-600 rounded-lg transition-all">
+                    Register
+                </button>
+            </div>
+            
+            <div id="loginView">
+                <div class="flex p-1 mb-6 bg-gray-100 rounded-lg">
+                    <button id="adminLoginTab" onclick="selectRole('admin')" 
+                            class="role-tab-button w-1/2 py-3 text-center text-sm font-semibold rounded-lg transition-all active">
+                        Administrator
+                    </button>
+                    <button id="userLoginTab" onclick="selectRole('user')" 
+                            class="role-tab-button w-1/2 py-3 text-center text-sm font-semibold text-gray-600 rounded-lg transition-all">
+                        User
+                    </button>
+                </div>
+
+                <form id="adminForm" class="login-form space-y-4" onsubmit="handleLogin(event, 'admin')">
+                    <div class="mb-4">
+                        <label for="adminUsername" class="block text-sm font-medium text-gray-700 mb-1">Admin Username</label>
+                        <input type="text" id="adminUsername" name="adminUsername" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="e.g., admin (initial)">
+                    </div>
+                    <div class="mb-6">
+                        <label for="adminPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="adminPassword" name="adminPassword" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="e.g., 12345 (initial)">
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                        Admin Sign In
+                    </button>
+                </form>
+
+                <form id="userForm" class="login-form space-y-4 hidden" onsubmit="handleLogin(event, 'user')">
+                    <div class="mb-4">
+                        <label for="userUsername" class="block text-sm font-medium text-gray-700 mb-1">User Username</label>
+                        <input type="text" id="userUsername" name="userUsername" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="e.g., user (initial)">
+                    </div>
+                    <div class="mb-6">
+                        <label for="userPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="userPassword" name="userPassword" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="e.g., password (initial)">
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                        User Sign In
+                    </button>
+                </form>
+            </div>
+
+            <div id="registerView" class="hidden">
+                <form id="registerForm" class="space-y-4" onsubmit="handleRegister(event)">
+                    <p class="text-sm text-gray-600 text-center mb-6">Create a new account for either role.</p>
+
+                    <div class="mb-4">
+                        <label for="registerRole" class="block text-sm font-medium text-gray-700 mb-1">I want to register as:</label>
+                        <select id="registerRole" name="registerRole" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="user">Standard User</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="registerUsername" class="block text-sm font-medium text-gray-700 mb-1">Desired Username</label>
+                        <input type="text" id="registerUsername" name="registerUsername" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Choose a unique username">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="registerPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="registerPassword" name="registerPassword" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Set your password">
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50">
+                        Register New Account
+                    </button>
+                </form>
+            </div>
+
+            <div id="messageContainer" class="mt-6 hidden p-4 rounded-lg text-sm font-medium" role="alert">
+                </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    // Expanded data structure to simulate a database.
+    // This holds both initial hardcoded accounts and new registered accounts.
+    const DB = {
+        admin: [
+            // Initial Hardcoded Admin
+            { username: 'admin', password: '12345' } 
+        ],
+        user: [
+            // Initial Hardcoded User
+            { username: 'user', password: 'password' } 
+        ]
+    };
+
+    let currentView = 'login'; // 'login' or 'register'
+    let currentRole = 'admin'; // 'admin' or 'user' (for the active login form)
+
+    /**
+     * Shows a message in the feedback container.
+     * @param {string} message - The message text.
+     * @param {string} type - 'success' or 'error'.
+     */
+    function showMessage(message, type) {
+        const container = document.getElementById('messageContainer');
+        container.textContent = message;
+        container.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+
+        if (type === 'success') {
+            container.classList.add('bg-green-100', 'text-green-800');
+        } else if (type === 'error') {
+            container.classList.add('bg-red-100', 'text-red-800');
+        }
+
+        // Hide message after 5 seconds
+        setTimeout(() => {
+            container.classList.add('hidden');
+        }, 5000);
+    }
+
+    /**
+     * Handles the form submission for registration.
+     * @param {Event} event - The form submission event.
+     */
+    function handleRegister(event) {
+        event.preventDefault();
+
+        // Clear previous messages
+        document.getElementById('messageContainer').classList.add('hidden');
+        
+        const role = document.getElementById('registerRole').value;
+        const username = document.getElementById('registerUsername').value.trim();
+        const password = document.getElementById('registerPassword').value.trim();
+
+        // 1. Check if the username already exists globally (in either role)
+        const isUsernameTaken = DB.admin.some(account => account.username === username) || 
+                                DB.user.some(account => account.username === username);
+
+        if (isUsernameTaken) {
+            showMessage(`Registration failed. The username "${username}" is already taken.`, 'error');
+            return;
+        }
+
+        // 2. Perform simple validation
+        if (username.length < 3 || password.length < 5) {
+             showMessage('Registration failed. Username must be at least 3 characters and password must be at least 5 characters.', 'error');
+            return;
+        }
+
+        // 3. Register the new account
+        const newAccount = { username, password };
+        DB[role].push(newAccount);
+        
+        // 4. Show success message and automatically switch to the correct login tab 
+        showMessage(`Success! New ${role.toUpperCase()} account created. You can now log in.`, 'success');
+        document.getElementById('registerForm').reset();
+        
+        selectView('login');
+        selectRole(role); // Switch to the relevant login tab
+    }
+
+
+    /**
+     * Handles the form submission and simulated authentication.
+     * @param {Event} event - The form submission event.
+     * @param {string} role - 'admin' or 'user'.
+     */
+    function handleLogin(event, role) {
+        event.preventDefault(); 
+
+        // Clear previous messages
+        document.getElementById('messageContainer').classList.add('hidden');
+        
+        const form = document.getElementById(role + 'Form');
+        
+        // Get input values based on the role (e.g., adminUsername)
+        const usernameInput = form.querySelector(`#${role}Username`);
+        const passwordInput = form.querySelector(`#${role}Password`);
+
+        const enteredUsername = usernameInput.value.trim();
+        const enteredPassword = passwordInput.value.trim();
+        
+        // Check if credentials match any account in the respective role array
+        const isAuthenticated = DB[role].some(account => 
+            account.username === enteredUsername && account.password === enteredPassword
+        );
+
+        if (isAuthenticated) {
+            
+            // Set a flag in localStorage for the next page to know the user's role
+            localStorage.setItem('userRole', role);
+            
+            if (role === 'admin') {
+                // Redirect Administrator to admin.html
+                window.location.href = 'admin.html';
+            } else {
+                // Redirect Standard User to first.html (UPDATED LINE)
+                window.location.href = 'first.html';
+            }
+
+            // Note: The form.reset() and showMessage() calls below won't be executed 
+            // because the page will immediately redirect.
+            
+        } else {
+            showMessage(`Login failed. Invalid credentials for ${role.toUpperCase()} role.`, 'error');
+        }
+    }
+
+    /**
+     * Toggles the visibility between the Admin and User LOGIN forms.
+     * @param {string} newRole - 'admin' or 'user'.
+     */
+    function selectRole(newRole) {
+        if (currentRole === newRole && currentView === 'login') return;
+
+        // Get elements for login forms and tabs
+        const adminForm = document.getElementById('adminForm');
+        const userForm = document.getElementById('userForm');
+        const adminTab = document.getElementById('adminLoginTab');
+        const userTab = document.getElementById('userLoginTab');
+        
+        // Update visibility and active tab styles for the inner role switcher
+        if (newRole === 'admin') {
+            adminForm.classList.remove('hidden');
+            userForm.classList.add('hidden');
+            adminTab.classList.add('active');
+            userTab.classList.remove('active');
+        } else {
+            adminForm.classList.add('hidden');
+            userForm.classList.remove('hidden');
+            adminTab.classList.remove('active');
+            userTab.classList.add('active');
+        }
+
+        currentRole = newRole;
+        
+        // Hide any existing messages when switching roles
+        document.getElementById('messageContainer').classList.add('hidden');
+    }
+
+    /**
+     * Toggles the main view between Login and Register.
+     * @param {string} view - 'login' or 'register'.
+     */
+    function selectView(view) {
+        if (currentView === view) return;
+
+        const loginView = document.getElementById('loginView');
+        const registerView = document.getElementById('registerView');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+
+        if (view === 'login') {
+            loginView.classList.remove('hidden');
+            registerView.classList.add('hidden');
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+        } else {
+            loginView.classList.add('hidden');
+            registerView.classList.remove('hidden');
+            loginTab.classList.remove('active');
+            registerTab.classList.add('active');
+        }
+
+        currentView = view;
+
+        // Reset forms and hide messages when switching views
+        document.getElementById('adminForm').reset();
+        document.getElementById('userForm').reset();
+        document.getElementById('registerForm').reset();
+        document.getElementById('messageContainer').classList.add('hidden');
+    }
+
+    // Initialize: ensure the login view and admin form are visible on load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize the view first
+        selectView('login');
+        // Then initialize the role inside the login view
+        selectRole('admin');
+    });
+
+</script>
+
+</body>
+</html>

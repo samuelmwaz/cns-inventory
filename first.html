@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Store System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .main-container {
+            width: 800px;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .nav-link {
+            text-decoration: none;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        #link-stock { background-color: #007bff; }
+        #link-grn { background-color: #28a745; }
+        #link-po { background-color: #ffc107; }
+        #link-distributors { background-color: #17a2b8; }
+        #link-kalumbila { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>CABLE NETWORK SOLUTION INVENTORY SYSTEM</h1>
+        <div class="nav-links">
+            <a href="stock.html" class="nav-link" id="link-stock">In-Store Stock</a>
+            <a href="distributors.html" class="nav-link" id="link-stock">distributors</a>
+            <a href="grn.html" class="nav-link" id="link-grn">Goods Received Note</a>
+            <a href="delivary.html" class="nav-link" id="link-po">delivary note </a>
+            <a href=" clients.html" class="nav-link" id="link-distributors">Clients</a>
+            <a href="invoice.html " class="nav-link" id="link-distributors"> invoice </a>
+            <a href=" salesorder.html" class="nav-link" id="link-distributors">sales order</a>
+            <a href="kalumbila_total.html" class="nav-link" id="link-kalumbila">Kalumbila Totals</a>
+            <a href="kansanshi_total.html" class="nav-link" id="link-kalumbila">kansanshi_total</a>
+        </div>
+    </div>
+</body>
+</html>

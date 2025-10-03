@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Order Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .main-container {
+                display: block;
+                max-width: none;
+                flex-direction: column;
+                padding: 0;
+            }
+            .order-container {
+                width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+            }
+            .item-table input, .form-group input, .form-group textarea, .form-group select {
+                border: none !important;
+                background-color: transparent !important;
+            }
+            .item-table th, .item-table td {
+                border-color: #333;
+            }
+        }
+    </style>
+</head>
+<body class="flex justify-center p-8 min-h-screen">
+    <div class="main-container flex flex-col md:flex-row gap-8 max-w-7xl mx-auto w-full">
+        <div id="message-box" class="fixed top-4 right-4 z-50 transition-transform duration-300 ease-out transform -translate-y-full opacity-0"></div>
+        
+        <div id="modal-container" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center"></div>
+
+        <div class="no-print w-full md:w-1/3">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                
+                <nav class="nav-links border-b pb-4 mb-6">
+                    <h3 class="text-sm font-bold text-gray-800 mb-2">Navigation</h3>
+                    <ul class="space-y-1 text-sm">
+                        <li><a href="stock.html" class="nav-link text-blue-600 hover:text-blue-800" id="link-stock">In-Store Stock</a></li>
+                        <li><a href="distributors.html" class="nav-link text-blue-600 hover:text-blue-800" id="link-distributors">Distributors</a></li>
+                        <li><a href="grn.html" class="nav-link text-blue-600 hover:text-blue-800" id="link-grn">Goods Received Note</a></li>
+                        <li><a href="delivary.html" class="nav-link text-blue-600 hover:text-blue-800" id="link-po">Delivery Note</a></li>
+                        <li><a href="clients.html" class="nav-link text-blue-600 hover:text-blue-800">Clients</a></li>
+                        <li><a href="invoice.html" class="nav-link text-blue-600 hover:text-blue-800">Invoice</a></li>
+                        <li><a href="salesorder.html" class="nav-link font-semibold text-purple-600 hover:text-purple-800">Sales Order (Current)</a></li>
+                        <li><a href="kalumbila_total.html" class="nav-link text-blue-600 hover:text-blue-800" id="link-kalumbila">Kalumbila Totals</a></li>
+                        <li><a href="kansanshi_total.html" class="nav-link text-blue-600 hover:text-blue-800">Kansanshi Totals</a></li>
+                    </ul>
+                </nav>
+                
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Sales Order Details</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="order-number" class="block text-sm font-medium text-gray-700 mb-1">Order Number</label>
+                        <input type="text" id="order-number" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value="SO-0001">
+                    </div>
+                    <div class="form-group">
+                        <label for="order-date" class="block text-sm font-medium text-gray-700 mb-1">Order Date</label>
+                        <input type="date" id="order-date" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="seller-name" class="block text-sm font-medium text-gray-700 mb-1">Seller Details</label>
+                    <input type="text" id="seller-name" placeholder="Your Company Name" class="w-full border border-gray-300 rounded-md p-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <textarea id="seller-address" rows="2" placeholder="Your Address" class="w-full border border-gray-300 rounded-md p-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <div class="form-group mb-4">
+                    <label for="customer-name" class="block text-sm font-medium text-gray-700 mb-1">Customer Details</label>
+                    <input type="text" id="customer-name" placeholder="Client Name or Company" class="w-full border border-gray-300 rounded-md p-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <textarea id="customer-address" rows="2" placeholder="Client Address" class="w-full border border-gray-300 rounded-md p-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <input type="email" id="customer-email" placeholder="Client Email" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="shipping-date" class="block text-sm font-medium text-gray-700 mb-1">Shipping Date</label>
+                        <input type="date" id="shipping-date" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="form-group">
+                        <label for="currency-symbol" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select id="currency-symbol" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="$">US Dollar ($)</option>
+                            <option value="€">Euro (€)</option>
+                            <option value="£">Pound (£)</option>
+                            <option value="¥">Yen (¥)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="form-group">
+                        <label for="tax-rate" class="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                        <input type="number" id="tax-rate" value="0" min="0" max="100" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="form-group">
+                        <label for="discount-rate" class="block text-sm font-medium text-gray-700 mb-1">Discount Rate (%)</label>
+                        <input type="number" id="discount-rate" value="0" min="0" max="100" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <button onclick="addItem()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">
+                        Add Item
+                    </button>
+                    <button onclick="saveOrder()" class="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">
+                        Save Order (Local)
+                    </button>
+                    <button onclick="generatePdf()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">
+                        Download PDF
+                    </button>
+                    <button onclick="printOrder()" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">
+                        Print
+                    </button>
+                    <button onclick="clearForm()" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">
+                        Clear Order
+                    </button>
+                    <button onclick="toggleSavedOrders()" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">
+                        <span id="toggle-button-text">View Saved Orders (Local)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-grow w-full md:w-2/3">
+            <div id="order-preview-section" class="order-container bg-white p-8 md:p-12 rounded-2xl shadow-lg border border-gray-200">
+                <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-4">
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-gray-900 mb-1">SALES ORDER</h1>
+                        <p id="order-number-display" class="text-sm text-gray-500">Order #SO-0001</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 text-left md:text-right">
+                        <h2 id="seller-name-display" class="text-lg font-semibold text-gray-800">Your Company Name</h2>
+                        <address id="seller-address-display" class="text-sm text-gray-500 not-italic">123 Your Street<br>City, State 12345</address>
+                    </div>
+                </header>
+                
+                <section class="flex flex-col md:flex-row justify-between mb-8 text-sm">
+                    <div>
+                        <p class="font-bold text-gray-700 mb-1">Customer:</p>
+                        <p id="customer-name-display" class="text-gray-800 font-semibold">Client Name</p>
+                        <address id="customer-address-display" class="text-gray-500 not-italic">Client Street<br>Client City, State 54321</address>
+                        <p id="customer-email-display" class="text-gray-500">client@example.com</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 text-left md:text-right">
+                        <p class="mb-1"><span class="font-bold text-gray-700">Order Date:</span> <span id="order-date-display" class="text-gray-600"></span></p>
+                        <p class="mb-1"><span class="font-bold text-gray-700">Shipping Date:</span> <span id="shipping-date-display" class="text-gray-600"></span></p>
+                    </div>
+                </section>
+
+                <table class="item-table w-full mb-8 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700">
+                            <th class="py-2 px-4 text-left font-semibold text-sm">Description</th>
+                            <th class="py-2 px-4 text-left font-semibold text-sm">Qty</th>
+                            <th class="py-2 px-4 text-left font-semibold text-sm">Rate</th>
+                            <th class="py-2 px-4 text-left font-semibold text-sm">Amount</th>
+                            <th class="py-2 px-4 text-right font-semibold text-sm no-print">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-items-body">
+                        </tbody>
+                </table>
+                
+                <div class="flex justify-end">
+                    <div class="w-full md:w-1/2 lg:w-1/3 space-y-2 text-sm text-gray-700">
+                        <div class="flex justify-between">
+                            <span>Subtotal:</span>
+                            <span id="subtotal-display" class="font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Tax (<span id="tax-rate-display">0</span>%):</span>
+                            <span id="tax-amount-display" class="font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Discount (<span id="discount-rate-display">0</span>%):</span>
+                            <span id="discount-amount-display" class="font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg text-gray-900 border-t pt-2 mt-2">
+                            <span>Total:</span>
+                            <span id="total-display">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="mt-8 pt-4 border-t text-sm text-center text-gray-500">
+                    <p>Thank you for your business!</p>
+                </footer>
+            </div>
+            
+            <div id="saved-orders-section" class="bg-white p-8 md:p-12 rounded-2xl shadow-lg border border-gray-200 mt-8 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Saved Orders (Local Storage)</h2>
+                <div id="order-list" class="space-y-4">
+                    <div class="text-center text-gray-500">Loading saved orders...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script>
+        // Initialize orders storage
+        let savedOrders = JSON.parse(localStorage.getItem('salesOrders') || '[]');
+
+        // Set the initial date and order number on page load
+        function initializeForm() {
+            document.getElementById('order-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('shipping-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('order-number').value = 'SO-' + String(Date.now()).slice(-6);
+            
+            const taxRateInput = document.getElementById('tax-rate');
+            if (taxRateInput) taxRateInput.value = '0';
+            const discountRateInput = document.getElementById('discount-rate');
+            if (discountRateInput) discountRateInput.value = '0';
+
+            if (document.getElementById('order-items-body').children.length === 0) {
+                addItem(); // Add one initial item row
+            }
+
+            calculateTotals(); // Initial calculation
+            updatePreview(); // Initial preview update
+            showInstructionMessage();
+
+            // Event listeners to update the preview in real-time
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', updatePreview);
+            });
+        }
+
+        // --- Utility Functions ---
+
+        // Message display function
+        function showMessage(type, message) {
+            const messageBox = document.getElementById('message-box');
+            let bgColor = '';
+            if (type === 'success') {
+                bgColor = 'bg-emerald-500';
+            } else if (type === 'error') {
+                bgColor = 'bg-rose-500';
+            } else {
+                bgColor = 'bg-gray-500';
+            }
+            messageBox.innerHTML = `
+                <div class="${bgColor} text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-transform duration-300 ease-in-out">
+                    ${message}
+                </div>
+            `;
+            messageBox.style.transform = 'translateY(0)';
+            messageBox.style.opacity = '1';
+
+            setTimeout(() => {
+                messageBox.style.transform = 'translateY(-100%)';
+                messageBox.style.opacity = '0';
+            }, 3000);
+        }
+
+        function showInstructionMessage() {
+            showMessage("success", "Welcome! Fill out the form to create a sales order.");
+        }
+        
+        // Custom confirmation modal
+        function showConfirmationModal(message, onConfirm) {
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.classList.remove('hidden');
+
+            modalContainer.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 max-w-sm mx-auto">
+                    <div class="text-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Confirmation</h3>
+                        <p class="text-sm text-gray-700">${message}</p>
+                    </div>
+                    <div class="flex justify-center gap-4">
+                        <button id="modal-cancel" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">Cancel</button>
+                        <button id="modal-confirm" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors duration-200">Confirm</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-confirm').addEventListener('click', () => {
+                onConfirm();
+                modalContainer.classList.add('hidden');
+            });
+
+            document.getElementById('modal-cancel').addEventListener('click', () => {
+                modalContainer.classList.add('hidden');
+            });
+        }
+        
+        // Format a number as currency
+        function formatCurrency(number) {
+            const currency = document.getElementById('currency-symbol').value;
+            // Using toFixed(2) for a simple, universal approach
+            return currency + parseFloat(number || 0).toFixed(2);
+        }
+
+        // Parse a currency string to a number
+        function parseCurrency(currencyString) {
+            // Remove all non-numeric characters except for the decimal point and minus sign
+            return parseFloat(currencyString.replace(/[^0-9.-]+/g,"")) || 0;
+        }
+
+        // --- Core Logic Functions ---
+
+        // Add a new item row to the sales order table
+        function addItem(description = '', quantity = 1, rate = 0) {
+            const tableBody = document.getElementById('order-items-body');
+            const row = document.createElement('tr');
+            row.className = "border-b border-gray-200 last:border-b-0";
+            
+            const initialAmount = (quantity * rate).toFixed(2);
+
+            row.innerHTML = `
+                <td class="py-2 px-4">
+                    <input type="text" value="${description}" class="w-full bg-transparent border-none text-sm outline-none" placeholder="Item Name or Description" oninput="updatePreview();">
+                </td>
+                <td class="py-2 px-4">
+                    <input type="number" min="0" value="${quantity}" class="w-20 bg-transparent border-none text-sm text-center outline-none" oninput="calculateItemTotal(this); updatePreview();">
+                </td>
+                <td class="py-2 px-4">
+                    <input type="number" min="0" value="${rate.toFixed(2)}" step="0.01" class="w-20 bg-transparent border-none text-sm text-right outline-none" oninput="calculateItemTotal(this); updatePreview();">
+                </td>
+                <td class="py-2 px-4 text-right">
+                    <span class="item-amount font-semibold text-gray-800">${formatCurrency(initialAmount)}</span>
+                </td>
+                <td class="py-2 px-4 text-right no-print">
+                    <button onclick="deleteItem(this)" class="text-rose-500 hover:text-rose-700 transition-colors duration-200" title="Delete item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+            calculateTotals();
+        }
+
+        // Delete an item row
+        function deleteItem(button) {
+            const row = button.closest('tr');
+            row.remove();
+            calculateTotals();
+            updatePreview();
+        }
+        
+        // Calculate the total for a single item row
+        function calculateItemTotal(input) {
+            const row = input.closest('tr');
+            const quantity = parseFloat(row.querySelector('input[type="number"]').value || 0);
+            // The rate is the second number input in the row
+            const rate = parseFloat(row.querySelectorAll('input[type="number"]')[1].value || 0); 
+            const amount = quantity * rate;
+            row.querySelector('.item-amount').textContent = formatCurrency(amount);
+            calculateTotals();
+        }
+
+        // Calculate all totals (subtotal, tax, discount, total)
+        function calculateTotals() {
+            const itemAmounts = document.querySelectorAll('.item-amount');
+            let subtotal = 0;
+            itemAmounts.forEach(item => {
+                subtotal += parseCurrency(item.textContent);
+            });
+            
+            const taxRateInput = document.getElementById('tax-rate');
+            const discountRateInput = document.getElementById('discount-rate');
+            const taxRate = parseFloat(taxRateInput ? taxRateInput.value : 0) / 100;
+            const discountRate = parseFloat(discountRateInput ? discountRateInput.value : 0) / 100;
+
+            const taxAmount = subtotal * taxRate;
+            const discountAmount = subtotal * discountRate;
+            const total = subtotal + taxAmount - discountAmount;
+
+            document.getElementById('subtotal-display').textContent = formatCurrency(subtotal);
+            document.getElementById('tax-amount-display').textContent = formatCurrency(taxAmount);
+            document.getElementById('discount-amount-display').textContent = formatCurrency(discountAmount);
+            document.getElementById('total-display').textContent = formatCurrency(total);
+
+            if (taxRateInput) document.getElementById('tax-rate-display').textContent = taxRateInput.value;
+            if (discountRateInput) document.getElementById('discount-rate-display').textContent = discountRateInput.value;
+        }
+
+        // Update preview content based on form inputs
+        function updatePreview() {
+            document.getElementById('order-number-display').textContent = 'Order #' + document.getElementById('order-number').value;
+            document.getElementById('order-date-display').textContent = document.getElementById('order-date').value;
+            document.getElementById('shipping-date-display').textContent = document.getElementById('shipping-date').value;
+            document.getElementById('seller-name-display').textContent = document.getElementById('seller-name').value || 'Your Company Name';
+            document.getElementById('seller-address-display').innerHTML = document.getElementById('seller-address').value.replace(/\n/g, '<br>') || 'Your Address';
+            document.getElementById('customer-name-display').textContent = document.getElementById('customer-name').value || 'Client Name';
+            document.getElementById('customer-address-display').innerHTML = document.getElementById('customer-address').value.replace(/\n/g, '<br>') || 'Client Address';
+            document.getElementById('customer-email-display').textContent = document.getElementById('customer-email').value || 'client@example.com';
+            calculateTotals();
+        }
+        
+        // --- Button/Action Functions (Local Storage) ---
+
+        // Save order (local storage)
+        function saveOrder() {
+            const orderNumber = document.getElementById('order-number').value.trim();
+            if (!orderNumber) {
+                showMessage('error', 'Please enter a valid order number.');
+                return;
+            }
+
+            const orderData = {
+                orderNumber: orderNumber,
+                orderDate: document.getElementById('order-date').value,
+                shippingDate: document.getElementById('shipping-date').value,
+                seller: {
+                    name: document.getElementById('seller-name').value,
+                    address: document.getElementById('seller-address').value
+                },
+                customer: {
+                    name: document.getElementById('customer-name').value,
+                    address: document.getElementById('customer-address').value,
+                    email: document.getElementById('customer-email').value
+                },
+                currency: document.getElementById('currency-symbol').value,
+                taxRate: parseFloat(document.getElementById('tax-rate').value || 0),
+                discountRate: parseFloat(document.getElementById('discount-rate').value || 0),
+                items: [],
+                subtotal: parseCurrency(document.getElementById('subtotal-display').textContent),
+                total: parseCurrency(document.getElementById('total-display').textContent),
+                savedAt: new Date().toISOString()
+            };
+
+            const itemRows = document.getElementById('order-items-body').querySelectorAll('tr');
+            itemRows.forEach(row => {
+                const description = row.querySelector('input[type="text"]').value;
+                const quantity = parseFloat(row.querySelectorAll('input[type="number"]')[0].value);
+                const rate = parseFloat(row.querySelectorAll('input[type="number"]')[1].value);
+                const amount = quantity * rate;
+                orderData.items.push({ description, quantity, rate, amount });
+            });
+
+            // Check if order already exists
+            const existingIndex = savedOrders.findIndex(order => order.orderNumber === orderNumber);
+            if (existingIndex >= 0) {
+                savedOrders[existingIndex] = orderData;
+            } else {
+                savedOrders.push(orderData);
+            }
+
+            localStorage.setItem('salesOrders', JSON.stringify(savedOrders));
+            showMessage('success', `Order ${orderNumber} saved successfully to Local Storage!`);
+        }
+        
+        // Load order
+        function loadOrder(orderNumber) {
+            const order = savedOrders.find(o => o.orderNumber === orderNumber);
+            if (!order) {
+                showMessage('error', 'Order not found in Local Storage.');
+                return;
+            }
+
+            // Load Header/Footer Data
+            document.getElementById('order-number').value = order.orderNumber;
+            document.getElementById('order-date').value = order.orderDate;
+            document.getElementById('shipping-date').value = order.shippingDate;
+            document.getElementById('seller-name').value = order.seller.name;
+            document.getElementById('seller-address').value = order.seller.address;
+            document.getElementById('customer-name').value = order.customer.name;
+            document.getElementById('customer-address').value = order.customer.address;
+            document.getElementById('customer-email').value = order.customer.email;
+            document.getElementById('currency-symbol').value = order.currency;
+            document.getElementById('tax-rate').value = order.taxRate || 0;
+            document.getElementById('discount-rate').value = order.discountRate || 0;
+
+            // Load Items Data
+            const tableBody = document.getElementById('order-items-body');
+            tableBody.innerHTML = ''; // Clear existing items
+
+            // Use the addItem function with loaded data
+            order.items.forEach(item => {
+                addItem(item.description, item.quantity, item.rate);
+            });
+            
+            updatePreview();
+            showMessage('success', `Order ${orderNumber} loaded successfully!`);
+
+            // Switch back to preview section if saved orders was visible
+            document.getElementById('saved-orders-section').classList.add('hidden');
+            document.getElementById('order-preview-section').classList.remove('hidden');
+            document.getElementById('toggle-button-text').textContent = 'View Saved Orders (Local)';
+        }
+
+        // Delete saved order
+        function deleteOrder(orderNumber) {
+            showConfirmationModal("Are you sure you want to delete this saved order? This cannot be undone.", () => {
+                savedOrders = savedOrders.filter(order => order.orderNumber !== orderNumber);
+                localStorage.setItem('salesOrders', JSON.stringify(savedOrders));
+                displaySavedOrders();
+                showMessage('success', `Order ${orderNumber} deleted.`);
+            });
+        }
+
+        // Display saved orders (Now showing item details)
+        function displaySavedOrders() {
+            const orderList = document.getElementById('order-list');
+            orderList.innerHTML = '';
+            if (savedOrders.length === 0) {
+                orderList.innerHTML = '<div class="text-center text-gray-500">No saved orders found in Local Storage.</div>';
+                return;
+            }
+
+            savedOrders.forEach(order => {
+                // Generate item list HTML, showing up to 3 items
+                const itemListHTML = order.items.slice(0, 3).map(item => 
+                    `<li class="truncate">${item.quantity} x ${item.description || 'N/A'}</li>`
+                ).join('');
+
+                const moreItemsText = order.items.length > 3 ? 
+                    `<li class="text-xs text-gray-500">+ ${order.items.length - 3} more item(s)</li>` : '';
+
+
+                const orderElement = document.createElement('div');
+                orderElement.className = "p-4 border border-gray-200 rounded-lg bg-white flex justify-between gap-4";
+                orderElement.innerHTML = `
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-gray-900 mb-1">Order #<span class="font-mono text-blue-700">${order.orderNumber}</span></h3>
+                        <p class="text-sm text-gray-700 mb-2">Client: ${order.customer.name || 'N/A'}</p>
+                        
+                        <div class="text-xs text-gray-600 mb-2">
+                            <span class="font-semibold">Items (${order.items.length}):</span>
+                            <ul class="list-disc list-inside ml-2 space-y-0.5 text-gray-700">
+                                ${itemListHTML}
+                                ${moreItemsText}
+                            </ul>
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 mt-2">
+                            <span class="font-bold">Total:</span> ${formatCurrency(order.total)} 
+                            <span class="text-xs text-gray-400 ml-2">(${new Date(order.savedAt).toLocaleDateString()})</span>
+                        </p>
+                    </div>
+                    <div class="flex flex-col gap-2 justify-center">
+                        <button onclick="loadOrder('${order.orderNumber}')" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-xl text-xs transition-colors duration-200 w-24">
+                            Edit/Load
+                        </button>
+                        <button onclick="deleteOrder('${order.orderNumber}')" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold py-1 px-3 rounded-xl text-xs transition-colors duration-200 w-24">
+                            Delete
+                        </button>
+                    </div>
+                `;
+                orderList.appendChild(orderElement);
+            });
+        }
+
+        // Toggle saved orders view
+        function toggleSavedOrders() {
+            const savedOrdersSection = document.getElementById('saved-orders-section');
+            const previewSection = document.getElementById('order-preview-section');
+            const buttonText = document.getElementById('toggle-button-text');
+            
+            if (savedOrdersSection.classList.contains('hidden')) {
+                savedOrdersSection.classList.remove('hidden');
+                previewSection.classList.add('hidden');
+                buttonText.textContent = 'Hide Saved Orders (Local)';
+                displaySavedOrders();
+            } else {
+                savedOrdersSection.classList.add('hidden');
+                previewSection.classList.remove('hidden');
+                buttonText.textContent = 'View Saved Orders (Local)';
+            }
+        }
+        
+        // Clear the entire form
+        function clearForm() {
+            showConfirmationModal("Are you sure you want to clear the sales order? This action cannot be undone.", () => {
+                const tableBody = document.getElementById('order-items-body');
+                tableBody.innerHTML = '';
+                
+                document.getElementById('order-number').value = 'SO-' + String(Date.now()).slice(-6);
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('order-date').value = today;
+                document.getElementById('shipping-date').value = today;
+                document.getElementById('seller-name').value = '';
+                document.getElementById('seller-address').value = '';
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-address').value = '';
+                document.getElementById('customer-email').value = '';
+                document.getElementById('tax-rate').value = '0';
+                document.getElementById('discount-rate').value = '0';
+
+                addItem();
+                updatePreview();
+                showMessage("success", "Sales order cleared.");
+            });
+        }
+
+        // Generate PDF
+        function generatePdf() {
+            const element = document.querySelector('#order-preview-section');
+            const opt = {
+                margin: 1,
+                filename: `sales-order-${document.getElementById('order-number').value}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save().then(() => {
+                showMessage("success", "PDF generated and downloaded!");
+            }).catch((error) => {
+                showMessage("error", "Failed to generate PDF. Check console for details.");
+                console.error("PDF generation error:", error);
+            });
+        }
+
+        // Print order
+        function printOrder() {
+            window.print();
+        }
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', initializeForm);
+    </script>
+</body>
+</html>

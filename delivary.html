@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> delivary note</title>
+    <style>
+        /* CSS for the entire single-file application */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-container {
+            width: 210mm;
+            min-height: 297mm;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        /* Styles for the new navigation links */
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #555;
+            background-color: #e9e9e9;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button:hover {
+            background-color: #dcdcdc;
+        }
+        
+        .tab-button.active {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
+
+        .component-container {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .button-group button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .button-group .save-btn {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .button-group .cancel-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        
+        .button-group .edit-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .item-table th, .item-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .item-table th {
+            background-color: #f2f2f2;
+        }
+
+        .history-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .history-list li {
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-list button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .history-list .view-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        
+        .history-list .delete-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .badge.pending {
+            background-color: #ffc107;
+        }
+
+        .badge.complete {
+            background-color: #28a745;
+        }
+        
+        /* Modal for history view */
+        .modal {
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-container {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .component-container {
+                padding: 10px;
+            }
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container" id="printableArea">
+        <div class="tab-buttons">
+            <a href="stock.html" class="tab-button">In-Store Stock</a>
+             <a href="first.html" class="tab-button"> main page</a>
+            <a href="grn.html " class="tab-button">Goods Received Note</a>
+            <a href="delivary.html " class="tab-button active">delivary note</a>
+            <a href="distributors.html" class="tab-button">Distributors</a>
+            <a href="kalumbila.html" class="tab-button">Kalumbila Totals</a>
+            <a href="kansanshi_total.html " class="tab-button">kansanshi_total </a>
+        </div>
+        <div class="component-container">
+            <h2>DELIVARY NOTE</h2>
+            <form id="poForm">
+                <div>
+                    <label for="poNumber">PO Number:</label>
+                    <input type="text" id="poNumber" required>
+                </div>
+                <div>
+                    <label for="poDate">PO Date:</label>
+                    <input type="date" id="poDate" required>
+                </div>
+                <div>
+                    <label for="distributor">CLIENT:</label>
+                    <input type="text" id="distributor" list="distributorList" required>
+                    <datalist id="distributorList"></datalist>
+                </div>
+                <div>
+                    <label for="poItems">Items:</label>
+                    <table class="item-table" id="po-items-table">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <button type="button" id="addPoItemBtn" style="width: 100%; margin-top: 10px;">Add Item</button>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="save-btn" id="savePoBtn">Save</button>
+                    <button type="button" class="cancel-btn" id="poCancelEditBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="component-container">
+            <h2>PO History</h2>
+            <ul id="poHistoryList" class="history-list"></ul>
+        </div>
+    </div>
+    
+    <div id="poHistoryModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" id="closePoHistoryBtn">&times;</span>
+            <h2 id="poModalTitle">PO</h2>
+            <div id="poModalContent"></div>
+            <div class="button-group">
+                <button type="button" class="download-btn" id="downloadPoBtn" style="background-color: #007bff; color: #fff;">Download PDF</button>
+                <button type="button" class="edit-btn" id="editPoBtn">Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="itemCodeList"></datalist>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script>
+        window.jsPDF = window.jspdf.jsPDF;
+
+        let poDocuments = JSON.parse(localStorage.getItem('poDocuments')) || [];
+        let currentPoId = null;
+
+        // Data for Kansanshi items
+        const KANSANSHI_ITEMS = {
+            '74574': { description: 'CABLE; FIBER; AERIAL; SINGLE MODE; 9 / 125um; 96 CORE; ADSS ROLL; 1000M;', unitPrice: 3.42 },
+            '44770': { description: 'PANEL; MDU FO PATCH; 12 WAY SC; SINGLE MODE; C/W PIGTAILS AND SPLICE BRIDG', unitPrice: 19.38 },
+            '30597': { description: 'PANEL; PATCH; OPTIC; FIBRE; 19IN (1U); 3MM; SP3-E;2C-SS; C/W 24 SINGLE MODE PIGTAILS', unitPrice: 20.00 },
+            '102586': { description: 'DEVICE; WIFI; FIBER; GPON CPE; UBIQUITI UISP; UB-UF-WIFI', unitPrice: 42.00 },
+            '31254': { description: 'TRANSCEIVER; LX/LH; CONNECTOR; LC; GE SFP; CISCO; GLC-LH-SM', unitPrice: 4.88 },
+            '31248': { description: 'FIBRE; SINGLE MODE; SC TO LC; 3M; HK ORIENT; HK-SM3M-SCLC', unitPrice: 1.05 },
+            '69664': { description: 'CISCO SFP-10G-SR COMPATIBLE; 10GBASE-SR SFP+ 850NM 300M DOM TRANSCEIVER MODULE', unitPrice: 4.25 },
+            '69676': { description: 'CISCO Compatible 10GBASE-BX10-U Bidi SFP+ 1270nm-TX/1330nm-RX 10km DOM Simplex LC/UPC SMF', unitPrice: 16.50 },
+            '69677': { description: 'Cisco Compatible 10GBASE-BX10-U Bidi SFP+ 1270nm-TX/1330nm-RX 10km DOM Simplex LC/UPC SMF', unitPrice: 16.50 },
+            '38525': { description: 'TRUNKING; DUAL; 145 X 50 X 2000MM; LEGRAND; 75604; C/W COVER', unitPrice: 10.15 },
+            '29734': { description: 'CABLE; NETWORK; DRUM; CAT6; TELDOR; CAA-000074-500; 305MTR', unitPrice: 137.28 },
+            '29738': { description: 'LEAD; PATCH; 1M; CAT5E; TELDOR; TEL-001-5E', unitPrice: 0.88 },
+            '29737': { description: 'LEAD; FLY; 3M; CAT5E; TELDOR; TEL-003-5E', unitPrice: 1.62 },
+            '31595': { description: 'PANEL; PATCH; CAT6; 24 PORT; TRENDNET; TC-P24C6', unitPrice: 14.50 },
+            '104647': { description: 'PANEL; BLANK; LINKEASIC; 19 INCH; RACK MOUNT; 2U; CAB-B2', unitPrice: 13.00 },
+            '104646': { description: 'PANEL; BLANK; LINKEASIC; 19 INCH; RACK MOUNT; 1U; CAB-B4', unitPrice: 9.00 },
+            '69672': { description: 'CABLE; WALL MOUNT; 9U; AFRAC; A90066; C/W SWINGFRAME', unitPrice: 71.40 },
+            '32535': { description: 'PANEL; TIDY; BRUSH; 150; NO RINGS; AFRAC; P-150MR', unitPrice: 14.50 },
+            '18177': { description: 'ENCLOSURE; SS 304L; 200 X 400 X 500MM; SCHNEIDER; NSYS3X5420H', unitPrice: 141.00 },
+            '102587': { description: 'MODULE; GPON OLT SFP; UF-GP-C', unitPrice: 25.00 },
+            '64410': { description: 'SPLICER; HIGH PRECISION CORE ALIGNMENT; ATOMWAVE AFS 60 WITH ACA; C/W ACESSORIES', unitPrice: 4500.00 },
+            'F61770': { description: 'CISCO PHONE CP-8811-K9', unitPrice: 200.00 },
+            '104645': { description: 'C9200L-24P-4X-E - Catalyst 9200L 24 port PoE+ 4x10g Uplink Switch, Cisco C9200L Cisco DNA Essentials, 48 port, 3 Year Term License', unitPrice: 2000.00 },
+            '104644': { description: 'CATALYST 9200L 48-PORT POE+ 4 X 10G; NETWORK ESSENTIALS Cisco C9200 Cisco DNA Essentials 48 port, 3 Year License', unitPrice: 3000.00 },
+            '55985': { description: 'MESH; UNIFI 802.11AC; INDOOR; 2.4/5GHZ AP; UBIQUITI; UAP-AC-M', unitPrice: 75.00 },
+            '52991': { description: 'ACCESS POINT; UBIQUITI; UNIFI; AP AC LR', unitPrice: 95.00 },
+            '77750': { description: 'RADIO; AF-5XHDU; AIRFIBER; EFFICIENT NOISE RESILIENT; PTP TECHNOLOGY', unitPrice: 155.00 },
+            '77751': { description: 'ANTENNA; AF-5G23-S45; AIRFIBER 5 GHZ, 23 DBI; SIANT 45', unitPrice: 50.00 },
+            '113425': { description: 'CLAMP; LEAD DOWN; FOR POLE SUN ADES-LDC SERIES; DIA-350MM; AVAILABLE ADSS CABLE', unitPrice: 1.25 },
+            '113423': { description: 'CLAMP; SUSPENSION; SUITABLE FOR MAX 100M SPAN & CABLE; DIA 10.8±0.5MM ADSS CABLE; STRENGTH', unitPrice: 1.80 },
+            '113417': { description: 'CLAMP; SUSPENSION; SUITABLE FOR MAX 100M SPAN & CABLE; DIA 12.1±0.5MM ADSS CABLE; STRENGTH', unitPrice: 1.80 },
+            '113420': { description: 'CLAMP; TENSION; SUITABLE FOR MAX 100M SPAN & CABLE; DIA 10.8±0.5MM ADSS CABLE', unitPrice: 2.50 },
+            '113418': { description: 'CLAMP; TENSION; SUITABLE FOR MAX 100M SPAN & CABLE; DIA 12.1±0.5MM ADSS CABLE', unitPrice: 2.50 },
+            '113422': { description: 'CLAMP; STORAGE; FOR POLE; DIA <450MM; MATERIAL; HOT DIP GALVANISED FLAT STEEL', unitPrice: 1.00 },
+            '113424': { description: 'CLAMP; TENSION; SUITABLE FOR MAX 100M SPAN & CABLE; DIA 10.8±0.5MM ADSS CABLE', unitPrice: 2.50 },
+            '113472': { description: 'RACKET; POLE CONNECT; FIBER OPTIC RACKET; FOR 16MM TO 5/8 PIECES OF ADAPTERS', unitPrice: 10.00 },
+            '113477': { description: 'CABLE; SINGLE MODE; DUPLEX; 1M; LC TO LC; UPC; FIBER TO; DIA 9/125; LC-C-576', unitPrice: 3.50 }
+        };
+
+        // Data for Kalumbila items with prices
+        const KALUMBILA_ITEMS = {
+            '22906': { description: 'SOCKET ARTEOR;RJ45;CAT6 UTP;1 MODULE WHITE;LEGRAND 572302', unitPrice: 7.80 },
+            '49557': { description: 'RJ45 CAT6 CABLE PLUG SHIELDED CONNECTOR;SOLID AND STRANDED;CW SLOT;UBNT-TC-CON-100', unitPrice: 0.32 },
+            '58807': { description: 'SWITCH;8 PORT;C3650;CISCO;PoE;WS-C3560CX-8PC-S', unitPrice: 1519.09 },
+            '58861': { description: 'Cable;Patch;0.5M UTP;Cat 5E Flex;Fly Lead Gray;LINK-0.5GR;LINKBASIC', unitPrice: 0.50 },
+            '58866': { description: 'Patch;Lead 3.0M;Fly Lead Gray;Cat 5E Flex;LINK-3.0GR;LINKBASIC', unitPrice: 1.60 },
+            '58872': { description: 'Cable;UTP 500M;LINKBASIC;CAT6E', unitPrice: 148.05 },
+            '58874': { description: 'Patch;Lead SC-LC 2.0M Fiber;', unitPrice: 3.84 },
+            '58875': { description: 'Patch;Lead SC-LC 3.0M Fiber', unitPrice: 3.89 },
+            '58876': { description: 'Patch;Lead LC-LC 2.0M;Fiber;', unitPrice: 4.20 },
+            '58877': { description: 'Patch;Lead LC-LC 3.0M Fiber;', unitPrice: 4.31 },
+            '58880': { description: 'Connector;IEC-320 C13;APC', unitPrice: 6.20 },
+            '58890': { description: 'Connector;IEC-320 C14;APC', unitPrice: 7.75 },
+            '58893': { description: 'CRIMPING;TOOL;RJ45&RJ11;ETHERNET/PHONE CABLE CUTTER;TRENDNET;TC-CT68', unitPrice: '' },
+            '58912': { description: 'ACCESS POINT;INDOOR;UNIFIAP;802.11a/b/g/n/ac;48V PoE;UBIQUITI;UAP-AC-PRO', unitPrice: '' },
+            '69889': { description: 'Patch;Linkbasic;CAT5E;24 PORT', unitPrice: '' },
+            '69895': { description: 'PANEL;PATCH;SC;24 PORT;FIB/SC', unitPrice: '' },
+            '76706': { description: 'Connector;RJ45', unitPrice: '' },
+            '76707': { description: 'Boot;Rubber;RJ45', unitPrice: '' },
+            '80484': { description: 'RADIO; UBIQUITI; 5GHz; AIRMAX AC; ROCKET; LITE PTMP; R5AC-LITE', unitPrice: '' },
+            '80485': { description: 'Ubiquiti Power over Ethemet;Injector;24v,1Amp PoE with SA Power;UB-POE24', unitPrice: '' },
+            '102755': { description: 'DISH;UBIQUITI5GHZ 30 dBi DUAL POLARIZED;5100-5800MHZ,2FT,SMA(F)RPX2,PTP ISO 35 Db', unitPrice: '' },
+            '107279': { description: 'PHONE;CISCO IP;8811;', unitPrice: '' },
+            '107282': { description: 'ACCESS POINT;OUTDOOR;UNIFI MESH AP;802.11a/b/g/n/ac;48V PoE;UBIQUITI;UAP-AC-M-PRO', unitPrice: '' },
+            '107230': { description: 'ADAPTER;48V PoE;WITH GIGABIT LAN PORT;UBIQUITI NETWORKS;POE-48-24W-G', unitPrice: '' },
+            '108154': { description: 'CABINET 9U;NETWORK;WALL MOUNT;SWING FRAME', unitPrice: '' },
+            '109815': { description: 'SWITCH;48 PORT;POE+;4x10G UPLINK;CW LICENCE;CISCO;C9200L-48P-4X-E', unitPrice: '' },
+            '124500': { description: 'SWITCH;CISCO;24 PORT;C9200L 24P-4X-E;CW LICENCE', unitPrice: '' },
+            '130047': { description: 'MODULE;TRANSCEIVER;CISCO COMPATIBLE 10GBASE-T SFP+;COPPER RJ-45;SFP-10G-T-CURV', unitPrice: '' },
+            '140064': { description: 'CISCO COMPATIBLE;10GBASE-BX10-D BIDISFP+1330NM-TX/1270NM-RX 10KM INDUSTRIAL DOM', unitPrice: '' },
+            '140065': { description: 'CISCO COMPATIBLE;10GBASE-BX10-U BIDI SFP+1270NM-TX/1330NM-RX 10KM INDUSTRIAL DOM', unitPrice: '' },
+            '140068': { description: 'SWITCH;CISCO;16 PORT;1/10G SFP+;C9500-16X-E;CW LICENSE', unitPrice: '' },
+            '140619': { description: 'SOCKET;FACEPLATE;RJ45;DOUBLE INSERT;WITH 3X3 PVC;BACK BOX', unitPrice: '' },
+            '141191': { description: 'CABLE;POWER SPLITTER CORD;4WAY UPS;C14 to C13', unitPrice: '' },
+            '142350': { description: 'TRANSCIEVER;CISCO;GLC-BX-D;COMPATIBLE;1GB-BX-D;BiDi SFP 10KM;1 Gb SFP 10Km GLC-BX-D-C', unitPrice: '' },
+            '142351': { description: 'TRANSCIEVER;CISCO;GLC-BX-U COMPATIBLE;1GB-BX-U;BiDi SFP 10KM;1 Gb SFP 10Km GLC-BX-U-C', unitPrice: '' },
+            '142352': { description: 'TRANSCIEVER;CISCO;GLC-BX-20D COMPATIBLE;1GB-BX-D BiDi SFP;20KM;1 Gb SFP 20Km GLC-BX-D20-', unitPrice: '' },
+            '142353': { description: 'TRANSCIEVER;CISC0;GLC-BX-20U COMPATIBLE;1GB-BX-U;BiDi SFP 20KM;1 Gb SFP 20Km GLC-BX-U20', unitPrice: '' },
+            '142517': { description: 'CISCO SWITCH MODULE;C9200;4x1G/10G;C9200-NM-4X', unitPrice: '' },
+            '143947': { description: 'PANEL;PATCH;FIBRE;SC;PORT;48;FIB/SC;CW COUPLERS;SUN;TELECOM;1U;8;1U8PATCHPANEL', unitPrice: 46.73 },
+            '147447': { description: 'ONU;SUN TELECOM;OPT NETWORK;UNIT;1 PORT SCUPC;4 PORT;10/100MB RJ45', unitPrice: 86.80 },
+            '147448': { description: 'ONU;SUN TELECOM;OPT NETWORK;UNIT;1 PORT SCIUPC;1 PORT;100/1000MB RJ45', unitPrice: 162.73 },
+            '148859': { description: 'WIRELESS;ACCESS POINT;OUTDOOR;EXT ANTENNA;CISC0;C9124AXE-E', unitPrice: 2345.71 },
+            '148860': { description: 'WIRELESS;ACCESS POINT;INDOOR;INTERNAL 802.11AX;CISCO;C9120AXI-E', unitPrice: 1007.95 },
+            '148862': { description: 'ANTENNA;OMNI;DUAL BAND;2.4G 6DBl;5G 8DBI;CISCO;AIR-ANT2568VG-NS', unitPrice: 201.00 },
+            '148863': { description: 'WIRELESS;POLEWALL;MOUNT;KIT;CISCO CATALYST APS;AIR-MNT-VERT1', unitPrice: 168.00 },
+            '156393': { description: 'CISCO;WEBEX;ROOM KIT AND ACCESSORIES', unitPrice: 12533.27 },
+            '160222': { description: 'CATALYST 9300 12 PORT 25/G/10G/1G SFP 28 WITH MODULAR UPLIFTS NETWORK ESSENTIALS C9300X-12Y-E', unitPrice: 8676.87 },
+            '160223': { description: 'CATALYST 9300 24- PORT 25G/10G/1G SFP 28 WITH MODULAR UPLINKS, NETWORK SESSENTIALS C9300X-24Y-E', unitPrice: 11938.63 },
+            '162425': { description: 'CISCO C9300X-NM-8Y CATALYST 9300 SFP MODULE NEW C9300X-NM-8Y', unitPrice: 13882.06 },
+            '160221': { description: 'CISCO C9300X-NM-8Y CATALYST 9300 SFP MODULE NEW C9300X-NM-8Y', unitPrice: 13882.06 },
+            '163926': { description: '', unitPrice: '' }
+        };
+
+        // Utility functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // PO Form Management
+        function resetPoForm() {
+            document.getElementById('poForm').reset();
+            document.getElementById('po-items-table').querySelector('tbody').innerHTML = '';
+            document.getElementById('savePoBtn').textContent = 'Save';
+            currentPoId = null;
+        }
+
+        function populatePoForm(po) {
+            document.getElementById('poNumber').value = po.poNumber;
+            document.getElementById('poDate').value = po.poDate;
+            document.getElementById('distributor').value = po.distributor;
+            const itemsTableBody = document.getElementById('po-items-table').querySelector('tbody');
+            itemsTableBody.innerHTML = '';
+            po.items.forEach(item => addPoItemRow(item));
+            document.getElementById('savePoBtn').textContent = 'Update';
+            currentPoId = po.id;
+        }
+
+        function savePoDocument(event) {
+            event.preventDefault();
+            const poNumber = document.getElementById('poNumber').value;
+            const poDate = document.getElementById('poDate').value;
+            const distributor = document.getElementById('distributor').value;
+            const items = getPoItemsFromTable();
+
+            if (items.length === 0) {
+                return;
+            }
+
+            const newPo = {
+                id: currentPoId || Date.now(),
+                poNumber,
+                poDate,
+                distributor,
+                items,
+                status: 'pending'
+            };
+
+            if (currentPoId) {
+                poDocuments = poDocuments.map(po => po.id === currentPoId ? newPo : po);
+            } else {
+                poDocuments.push(newPo);
+            }
+
+            localStorage.setItem('poDocuments', JSON.stringify(poDocuments));
+            renderPoLists();
+            resetPoForm();
+        }
+
+        function getPoItemsFromTable() {
+            const items = [];
+            const rows = document.getElementById('po-items-table').querySelector('tbody').rows;
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const item = {
+                    itemCode: row.cells[0].querySelector('input').value,
+                    description: row.cells[1].querySelector('input').value,
+                    quantity: parseInt(row.cells[2].querySelector('input').value),
+                    unitPrice: parseFloat(row.cells[3].querySelector('input').value),
+                    total: parseFloat(row.cells[4].textContent)
+                };
+                items.push(item);
+            }
+            return items;
+        }
+
+        function addPoItemRow(item = {}) {
+            const tableBody = document.getElementById('po-items-table').querySelector('tbody');
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" value="${item.itemCode || ''}" required list="itemCodeList"></td>
+                <td><input type="text" value="${item.description || ''}" required></td>
+                <td><input type="number" value="${item.quantity || ''}" required min="1"></td>
+                <td><input type="number" value="${item.unitPrice || ''}" required min="0" step="0.01"></td>
+                <td>${item.total || ''}</td>
+                <td><button type="button" class="delete-item-btn" style="color: red;">Delete</button></td>
+            `;
+
+            newRow.querySelector('input[type="number"]').addEventListener('input', updatePoTotal);
+            newRow.querySelector('.delete-item-btn').addEventListener('click', (e) => e.target.closest('tr').remove());
+            
+            // Add event listener to the new item code input for auto-populating description and price
+            newRow.querySelector('input[list="itemCodeList"]').addEventListener('change', (e) => {
+                const itemCode = e.target.value;
+                const distributor = document.getElementById('distributor').value.toUpperCase();
+                const descriptionInput = e.target.closest('tr').cells[1].querySelector('input');
+                const unitPriceInput = e.target.closest('tr').cells[3].querySelector('input');
+
+                let itemsSource = {};
+                if (distributor === 'KANSANSHI') {
+                    itemsSource = KANSANSHI_ITEMS;
+                } else if (distributor === 'HALUMBILA' || distributor === 'KALUMBILA') {
+                    itemsSource = KALUMBILA_ITEMS;
+                }
+
+                if (itemsSource[itemCode]) {
+                    descriptionInput.value = itemsSource[itemCode].description;
+                    unitPriceInput.value = itemsSource[itemCode].unitPrice;
+                    updatePoTotal({ target: unitPriceInput });
+                }
+            });
+        }
+
+        function updatePoTotal(event) {
+            const row = event.target.closest('tr');
+            const quantity = parseInt(row.cells[2].querySelector('input').value);
+            const unitPrice = parseFloat(row.cells[3].querySelector('input').value);
+            const total = isNaN(quantity) || isNaN(unitPrice) ? '' : (quantity * unitPrice).toFixed(2);
+            row.cells[4].textContent = total;
+        }
+
+        // PO Rendering
+        function renderPoLists() {
+            const poHistoryList = document.getElementById('poHistoryList');
+            poHistoryList.innerHTML = '';
+
+            poDocuments.forEach(po => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>
+                        <strong>PO #${po.poNumber}</strong> - ${po.poDate} - ${po.distributor}
+                        <span class="badge ${po.status}">${po.status}</span>
+                    </span>
+                    <div class="item-actions">
+                        <button class="view-btn" data-id="${po.id}">View</button>
+                        <button class="delete-btn" data-id="${po.id}">Delete</button>
+                    </div>
+                `;
+                poHistoryList.appendChild(li);
+            });
+            addPoEventListeners();
+        }
+
+        function addPoEventListeners() {
+            document.querySelectorAll('#poHistoryList .view-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const po = poDocuments.find(p => p.id == e.target.dataset.id);
+                    if (po) {
+                        displayPoDetails(po);
+                    }
+                });
+            });
+
+            document.querySelectorAll('#poHistoryList .delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    deletePoDocument(e.target.dataset.id);
+                });
+            });
+        }
+        
+        function displayPoDetails(po) {
+            const modalContent = document.getElementById('poModalContent');
+            modalContent.innerHTML = `
+                <p><strong>PO Number:</strong> ${po.poNumber}</p>
+                <p><strong>PO Date:</strong> ${po.poDate}</p>
+                <p><strong>Distributor:</strong> ${po.distributor}</p>
+                <table class="item-table">
+                    <thead>
+                        <tr><th>Code</th><th>Description</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                        ${po.items.map(item => `
+                            <tr>
+                                <td>${item.itemCode}</td>
+                                <td>${item.description}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.unitPrice}</td>
+                                <td>${item.total}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('editPoBtn').dataset.id = po.id;
+            document.getElementById('downloadPoBtn').dataset.id = po.id;
+            showModal('poHistoryModal');
+        }
+
+        function deletePoDocument(id) {
+            poDocuments = poDocuments.filter(po => po.id != id);
+            localStorage.setItem('poDocuments', JSON.stringify(poDocuments));
+            renderPoLists();
+        }
+        
+        // PDF Generation
+        async function downloadPoPdf(id) {
+            const po = poDocuments.find(p => p.id == id);
+            if (!po) return;
+
+            const element = document.getElementById('poModalContent');
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const imgProps= doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            doc.save(`PO_${po.poNumber}.pdf`);
+        }
+        
+        // Function to load distributors from localStorage and populate the datalist
+        function loadDistributors() {
+            const distributorList = document.getElementById('distributorList');
+            let distributors = JSON.parse(localStorage.getItem('distributors')) || [];
+            
+            // If no distributors are in localStorage, initialize with the default list
+            if (distributors.length === 0) {
+                const defaultDistributors = [
+                    { name: 'KANSANSHI' },
+                    { name: 'HALUMBILA' },
+                    { name: 'BY-Mart' },
+                    { name: 'ZED-MOBILE' },
+                    { name: 'ZAMNET' },
+                    { name: 'MOPANI' },
+                    { name: 'ICE TECH' },
+                    { name: 'OTHERS' }
+                ];
+                localStorage.setItem('distributors', JSON.stringify(defaultDistributors));
+                distributors = defaultDistributors;
+            }
+
+            distributorList.innerHTML = '';
+            distributors.forEach(distributor => {
+                const option = document.createElement('option');
+                option.value = distributor.name;
+                distributorList.appendChild(option);
+            });
+        }
+        
+        function populateItemCodeDatalist(distributorName) {
+            const itemCodeDatalist = document.getElementById('itemCodeList');
+            itemCodeDatalist.innerHTML = '';
+            let itemsSource = null;
+
+            if (distributorName.toUpperCase() === 'KANSANSHI') {
+                itemsSource = KANSANSHI_ITEMS;
+            } else if (distributorName.toUpperCase() === 'HALUMBILA' || distributorName.toUpperCase() === 'KALUMBILA') {
+                itemsSource = KALUMBILA_ITEMS;
+            }
+
+            if (itemsSource) {
+                for (const code in itemsSource) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    itemCodeDatalist.appendChild(option);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPoLists();
+            loadDistributors(); // Call the function on page load
+            
+            document.getElementById('poForm').addEventListener('submit', savePoDocument);
+            document.getElementById('addPoItemBtn').addEventListener('click', () => addPoItemRow());
+            document.getElementById('poCancelEditBtn').addEventListener('click', resetPoForm);
+            
+            // Add listener to the distributor input to populate the item code datalist
+            document.getElementById('distributor').addEventListener('input', (e) => {
+                populateItemCodeDatalist(e.target.value);
+            });
+
+            document.getElementById('closePoHistoryBtn').addEventListener('click', () => hideModal('poHistoryModal'));
+            document.getElementById('editPoBtn').addEventListener('click', (e) => {
+                const po = poDocuments.find(p => p.id == e.target.dataset.id);
+                if (po) {
+                    populatePoForm(po);
+                    hideModal('poHistoryModal');
+                }
+            });
+            document.getElementById('downloadPoBtn').addEventListener('click', (e) => downloadPoPdf(e.target.dataset.id));
+        });
+    </script>
+</body>
+</html>

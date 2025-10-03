@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Store Stock (Integrated)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-container {
+            width: 210mm;
+            min-height: 297mm;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        .component-container {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+        .tab-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .nav-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-container input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .stock-table-container {
+            margin-top: 20px;
+        }
+
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .stock-table th, .stock-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .stock-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .stock-table td.text-left {
+            text-align: left;
+        }
+
+        .stock-level-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin: 0 auto;
+        }
+
+        .stock-level-indicator.red { background-color: #dc3545; }
+        .stock-level-indicator.yellow { background-color: #ffc107; }
+        .stock-level-indicator.green { background-color: #28a745; }
+
+        .adjustment-section {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .adjustment-section input {
+            width: 60px;
+            text-align: center;
+        }
+        .adjustment-section button {
+            padding: 5px 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .adjustment-section button:hover {
+            background-color: #0056b3;
+        }
+
+        .approval-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .approval-badge.pending {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .approval-badge.approved {
+            background-color: #28a745;
+            color: white;
+        }
+        .approval-badge.rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: 700px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-box .actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .modal-box button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        #closeHistoryBtn {
+            background-color: #007bff;
+        }
+
+        #closeHistoryBtn:hover {
+            background-color: #0056b3;
+        }
+        .history-item {
+            background-color: #f0f8ff;
+            border: 1px solid #e0f0ff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #monthly-view-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .info-message {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="tab-buttons">
+            <a href="first.html" class="tab-button active"> main page</a>
+            <a href="stock.html" class="tab-button active">In-Store Stock</a>
+            <a href="admin.html" class="tab-button">Admin Approval</a>
+            <a href="grn.html" class="tab-button">Goods Received Note</a>
+            <a href="po.html" class="tab-button">Purchase Order / Invoice</a>
+        </div>
+        <div class="component-container">
+            <h1>In-Store Stock</h1>
+
+            <div class="info-message">
+                💡 Stock adjustments require admin approval. Pending requests will appear in the Admin panel. **Use a positive number to increase stock (e.g., 5) or a negative number to decrease stock (e.g., -3).**
+            </div>
+
+            <div class="nav-buttons">
+                <button id="currentStockBtn" class="nav-button active">Current Stock</button>
+                <button id="arrivedItemsBtn" class="nav-button">Arrived Items</button>
+                <button id="sentItemsBtn" class="nav-button">Sent Items</button>
+            </div>
+
+            <div id="currentStockView">
+                <div class="search-container">
+                    <input type="text" id="searchItem" placeholder="Search by item code or description...">
+                </div>
+                <div class="stock-table-container">
+                    <table id="stockTable" class="stock-table">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Description</th>
+                                <th>Current Stock</th>
+                                <th>Status</th>
+                                <th>Adjustments (±Qty)</th>
+                                <th>Reason</th>
+                                <th>Approval Status</th>
+                                <th>History</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="monthlyView" class="hidden">
+                <div id="monthly-view-controls">
+                    <label for="month-select">Select Month:</label>
+                    <select id="month-select"></select>
+                </div>
+                <div class="stock-table-container">
+                    <table id="monthlyTable" class="stock-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Item Code</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Source</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal hidden">
+        <div class="modal-box">
+            <h2>Item History</h2>
+            <div id="historyDetails"></div>
+            <div class="actions">
+                <button id="closeHistoryBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentStockView = document.getElementById('currentStockView');
+            const monthlyView = document.getElementById('monthlyView');
+            const currentStockBtn = document.getElementById('currentStockBtn');
+            const arrivedItemsBtn = document.getElementById('arrivedItemsBtn');
+            const sentItemsBtn = document.getElementById('sentItemsBtn');
+            const monthSelect = document.getElementById('month-select');
+
+            const searchInput = document.getElementById('searchItem');
+            
+            // Initialize data variables
+            let stockData = {};
+            let monthlyHistory = {};
+            let grnDatabase = {};
+            let approvalRequests = [];
+            let pendingAdjustments = {};
+
+            let currentView = 'current';
+
+            // Function to generate a unique request ID
+            function generateRequestId() {
+                return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            // Function to load all data from localStorage
+            function refreshData() {
+                stockData = JSON.parse(localStorage.getItem('inStoreStockData')) || {
+                    'ITEM-A1': { description: 'High-power Servo Motor, 24V', currentStock: 10, history: [] },
+                    'ITEM-B2': { description: 'Industrial Grade Lubricant Oil, 50L', currentStock: 5, history: [] },
+                    'ITEM-C3': { description: 'Safety Goggles, clear lens', currentStock: 50, history: [] }
+                };
+                
+                // Set initial mock data if not present
+                if (!localStorage.getItem('inStoreStockData')) {
+                    localStorage.setItem('inStoreStockData', JSON.stringify(stockData));
+                }
+
+                monthlyHistory = JSON.parse(localStorage.getItem('monthlyHistory')) || {};
+                grnDatabase = JSON.parse(localStorage.getItem('grnData')) || {};
+                // The crucial line: loading the shared requests from localStorage
+                approvalRequests = JSON.parse(localStorage.getItem('approvalRequests')) || [];
+            }
+            
+            // Run initial data load
+            refreshData();
+
+
+            function getPendingRequestForItem(itemCode) {
+                return approvalRequests.find(req => 
+                    req.itemCode === itemCode && req.status === 'PENDING'
+                );
+            }
+
+            function renderStockTable(filterQuery = '') {
+                const tableBody = document.querySelector('#stockTable tbody');
+                tableBody.innerHTML = '';
+                
+                // Re-read data before rendering to catch cross-page updates
+                refreshData(); 
+                
+                const filteredItems = Object.entries(stockData).filter(([itemCode, item]) => {
+                    const query = filterQuery.toLowerCase();
+                    return itemCode.toLowerCase().includes(query) || item.description.toLowerCase().includes(query);
+                });
+
+                if (filteredItems.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="8">No matching stock items found.</td></tr>';
+                    return;
+                }
+
+                filteredItems.sort(([, a], [, b]) => a.description.localeCompare(b.description));
+
+                filteredItems.forEach(([itemCode, item]) => {
+                    const row = document.createElement('tr');
+                    const statusClass = item.currentStock > 10 ? 'green' : (item.currentStock > 0 ? 'yellow' : 'red');
+                    const pendingRequest = getPendingRequestForItem(itemCode);
+                    
+                    let approvalStatusHtml = '<span style="color: #999;">-</span>';
+                    if (pendingRequest) {
+                        approvalStatusHtml = `<span class="approval-badge pending">PENDING</span>`;
+                    } else {
+                        // Check for a recently approved/rejected request for visual feedback
+                        const lastRequest = approvalRequests.filter(r => r.itemCode === itemCode)
+                                                            .sort((a, b) => b.timestamp - a.timestamp)[0];
+                        if (lastRequest && Date.now() - lastRequest.timestamp < (5 * 60 * 1000)) { // show recent status for 5 mins
+                            if (lastRequest.status === 'APPROVED') {
+                                approvalStatusHtml = `<span class="approval-badge approved">APPROVED</span>`;
+                            } else if (lastRequest.status === 'REJECTED') {
+                                approvalStatusHtml = `<span class="approval-badge rejected">REJECTED</span>`;
+                            }
+                        }
+                    }
+
+                    // DETERMINE BUTTON TEXT BASED ON INPUT VALUE
+                    const getButtonText = (value) => {
+                        const amount = parseInt(value, 10);
+                        if (isNaN(amount) || amount === 0) return 'Request';
+                        if (amount > 0) return 'Increase';
+                        return 'Decrease';
+                    };
+                    
+                    // The button text will be dynamically updated by an event listener
+                    // Initially it's 'Request'
+                    const buttonText = pendingRequest ? 'Pending' : 'Request';
+                    
+                    row.innerHTML = `
+                        <td>${itemCode}</td>
+                        <td class="text-left">${item.description}</td>
+                        <td>${item.currentStock}</td>
+                        <td><div class="stock-level-indicator ${statusClass}"></div></td>
+                        <td>
+                            <div class="adjustment-section">
+                                <input type="number" class="adjustment-amount" placeholder="±Qty" data-item-code="${itemCode}" value="" ${pendingRequest ? 'disabled' : ''} oninput="this.closest('tr').querySelector('.save-adjustment-btn').textContent = getButtonText(this.value);">
+                                <button class="save-adjustment-btn" data-item-code="${itemCode}" ${pendingRequest ? 'disabled' : ''}>
+                                    ${buttonText}
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" class="adjustment-reason" placeholder="Reason for adjustment" data-item-code="${itemCode}" ${pendingRequest ? 'disabled' : ''}>
+                        </td>
+                        <td>${approvalStatusHtml}</td>
+                        <td><button onclick="viewHistory('${itemCode}')">View History</button></td>
+                    `;
+                    tableBody.appendChild(row);
+
+                    // Attach the global function to the window object so it can be called from inline HTML
+                    window.getButtonText = getButtonText;
+                });
+            }
+
+            // Function to create and save the request
+            function createApprovalRequest(itemCode, amount, reason) {
+                const request = {
+                    id: generateRequestId(),
+                    poNumber: 'ADJ-' + Date.now(),
+                    itemCode: itemCode,
+                    itemDescription: stockData[itemCode].description,
+                    quantity: amount,
+                    adjustmentType: amount > 0 ? 'increase' : 'decrease',
+                    reason: reason,
+                    status: 'PENDING',
+                    userId: 'current_user',
+                    timestamp: Date.now(), // Use standard JS timestamp
+                    requestedChange: amount
+                };
+
+                // Add the new request to the local array
+                approvalRequests.push(request);
+                
+                // SAVE the updated array back to localStorage
+                localStorage.setItem('approvalRequests', JSON.stringify(approvalRequests));
+                
+                alert(`Adjustment request created for ${itemCode}.\nAmount: ${amount}\nStatus: Pending Admin Approval`);
+                renderStockTable(searchInput.value); // Re-render to show 'PENDING' badge
+            }
+            
+            // ... (rest of the functions: getGrnArrivedItems, renderMonthlyTable, populateMonthSelect, switchView)
+            
+            function getGrnArrivedItems() {
+                const arrivedItems = [];
+                
+                Object.values(grnDatabase).forEach(grn => {
+                    grn.items.forEach(item => {
+                        if (item.receivedQty > 0) {
+                            const date = new Date(grn.grnDate);
+                            const yearMonth = date.toISOString().substring(0, 7);
+                            
+                            arrivedItems.push({
+                                date: grn.grnDate,
+                                itemCode: item.itemCode,
+                                description: item.description,
+                                quantity: item.receivedQty,
+                                source: 'GRN',
+                                note: `GRN No: ${grn.grnNumber}`,
+                                yearMonth: yearMonth
+                            });
+                        }
+                    });
+                });
+                
+                return arrivedItems;
+            }
+
+            function renderMonthlyTable(type, month) {
+                const tableBody = document.querySelector('#monthlyTable tbody');
+                tableBody.innerHTML = '';
+                
+                let items = [];
+                
+                if (type === 'arrived') {
+                    const grnItems = getGrnArrivedItems().filter(item => item.yearMonth === month);
+                    const manualItems = (monthlyHistory[month] && monthlyHistory[month][type]) ? monthlyHistory[month][type] : [];
+                    items = [...grnItems, ...manualItems];
+                } else {
+                    items = (monthlyHistory[month] && monthlyHistory[month][type]) ? monthlyHistory[month][type] : [];
+                }
+
+                if (items.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="6">No items found for this month.</td></tr>`;
+                    return;
+                }
+
+                items.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.date}</td>
+                        <td>${item.itemCode}</td>
+                        <td class="text-left">${item.description}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.source || 'Manual'}</td>
+                        <td>${item.note || '-'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function populateMonthSelect() {
+                const allMonths = new Set();
+                
+                Object.keys(monthlyHistory).forEach(month => allMonths.add(month));
+                
+                Object.values(grnDatabase).forEach(grn => {
+                    const date = new Date(grn.grnDate);
+                    const yearMonth = date.toISOString().substring(0, 7);
+                    allMonths.add(yearMonth);
+                });
+                
+                const months = Array.from(allMonths).sort().reverse();
+                
+                monthSelect.innerHTML = '';
+                months.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = new Date(month).toLocaleString('en-US', { year: 'numeric', month: 'long' });
+                    monthSelect.appendChild(option);
+                });
+            }
+
+            function switchView(viewType) {
+                currentView = viewType;
+                currentStockBtn.classList.remove('active');
+                arrivedItemsBtn.classList.remove('active');
+                sentItemsBtn.classList.remove('active');
+
+                if (viewType === 'current') {
+                    currentStockBtn.classList.add('active');
+                    currentStockView.classList.remove('hidden');
+                    monthlyView.classList.add('hidden');
+                    renderStockTable(searchInput.value);
+                } else {
+                    document.getElementById(viewType === 'arrived' ? 'arrivedItemsBtn' : 'sentItemsBtn').classList.add('active');
+                    currentStockView.classList.add('hidden');
+                    monthlyView.classList.remove('hidden');
+                    populateMonthSelect();
+                    if (monthSelect.value) {
+                        renderMonthlyTable(viewType, monthSelect.value);
+                    }
+                }
+            }
+
+            function handleAdjustment(itemCode, amount, reason) {
+                if (isNaN(amount) || amount === 0) {
+                    alert('Please enter a valid, non-zero number for the adjustment. Use positive for increase, negative for decrease.');
+                    return;
+                }
+                if (reason.trim() === '') {
+                    alert('A reason is required for stock adjustments.');
+                    return;
+                }
+
+                if (!stockData[itemCode]) {
+                    alert('Item not found in stock database.');
+                    return;
+                }
+
+                if (getPendingRequestForItem(itemCode)) {
+                    alert('There is already a pending approval request for this item.');
+                    return;
+                }
+
+                createApprovalRequest(itemCode, amount, reason);
+            }
+
+            window.viewHistory = function(itemCode) {
+                const item = stockData[itemCode];
+                if (!item || !item.history || item.history.length === 0) {
+                    const historyDetails = document.getElementById('historyDetails');
+                    historyDetails.innerHTML = `<p>No history found for ${itemCode}.</p>`;
+                    document.getElementById('historyModal').classList.remove('hidden');
+                    return;
+                }
+
+                const historyDetails = document.getElementById('historyDetails');
+                historyDetails.innerHTML = `
+                    <h3>History for ${itemCode} - ${item.description}</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                item.history.forEach(entry => {
+                    historyDetails.innerHTML += `
+                        <tr>
+                            <td>${entry.date}</td>
+                            <td>${entry.type}</td>
+                            <td>${entry.amount}</td>
+                            <td>${entry.note}</td>
+                        </tr>
+                    `;
+                });
+                historyDetails.innerHTML += `
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('historyModal').classList.remove('hidden');
+            }
+            
+            searchInput.addEventListener('input', (e) => {
+                renderStockTable(e.target.value);
+            });
+
+            document.getElementById('stockTable').addEventListener('click', (e) => {
+                if (e.target.classList.contains('save-adjustment-btn')) {
+                    const itemCode = e.target.getAttribute('data-item-code');
+                    const row = e.target.closest('tr');
+                    const amountInput = row.querySelector('.adjustment-amount');
+                    const reasonInput = row.querySelector('.adjustment-reason');
+
+                    // Check if input value is a valid number before trying to parse
+                    if (amountInput.value === '' || isNaN(amountInput.value)) {
+                         alert('Please enter a valid number for the adjustment.');
+                         return;
+                    }
+
+                    const amount = parseInt(amountInput.value, 10);
+                    const reason = reasonInput.value;
+                    handleAdjustment(itemCode, amount, reason);
+                }
+            });
+
+            document.getElementById('closeHistoryBtn').addEventListener('click', () => {
+                document.getElementById('historyModal').classList.add('hidden');
+            });
+            
+            currentStockBtn.addEventListener('click', () => switchView('current'));
+            arrivedItemsBtn.addEventListener('click', () => switchView('arrived'));
+            sentItemsBtn.addEventListener('click', () => switchView('sent'));
+            monthSelect.addEventListener('change', (e) => renderMonthlyTable(currentView, e.target.value));
+
+            // Listener for cross-page updates (e.g., admin approving a request)
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'approvalRequests' || e.key === 'inStoreStockData') {
+                    refreshData();
+                    if (currentView === 'current') {
+                        renderStockTable(searchInput.value);
+                    }
+                }
+            });
+
+            renderStockTable();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-container {
+            width: 210mm;
+            min-height: 297mm;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        /* New Component Styles */
+        .component-container {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        /* New Styles for Distributor Section */
+        .distributor-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .distributor-section h3 {
+            color: #333;
+            text-align: left;
+            margin-top: 0;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .po-list-container {
+            margin-top: 15px;
+        }
+
+        .po-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fcfcfc;
+        }
+
+        .po-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .po-header strong {
+            font-size: 1.1em;
+            color: #007bff;
+        }
+        
+        .po-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .po-items-table th, .po-items-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .po-items-table th {
+            background-color: #f2f2f2;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #555;
+            background-color: #e9e9e9;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button:hover {
+            background-color: #dcdcdc;
+        }
+        
+        .tab-button.active {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .badge.pending {
+            background-color: #ffc107;
+        }
+
+        .badge.complete {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="tab-buttons">
+            <a href="stock.html" class="tab-button">In-Store Stock</a>
+            <a href="first.html " class="tab-button"> main page</a>
+          <a href="distributors.html" class="nav-link" id="link-stock">distributors</a>
+            <a href="grn.html" class="tab-button">Goods Received Note</a>
+            <a href="delivary.html" class="tab-button">Purchase Order / Invoice</a>
+            <a href="clients.html" class="tab-button active">Clients</a>
+            <a href="kalumbila_total.html" class="tab-button">Kalumbila Totals</a>
+            <a href="kansanshi_total.html " class="tab-button"> kansanshi Totals</a>
+        </div>
+        <div class="component-container">
+            <h1>Client Records</h1>
+            <div id="distributorListContainer">
+                </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const distributorListContainer = document.getElementById('distributorListContainer');
+
+            function renderDistributorList() {
+                const poDocuments = JSON.parse(localStorage.getItem('poDocuments')) || [];
+                distributorListContainer.innerHTML = '';
+
+                // Group POs by distributor
+                const distributors = poDocuments.reduce((acc, po) => {
+                    const distributorName = po.distributor || 'Unknown';
+                    if (!acc[distributorName]) {
+                        acc[distributorName] = [];
+                    }
+                    acc[distributorName].push(po);
+                    return acc;
+                }, {});
+
+                const sortedDistributors = Object.keys(distributors).sort();
+
+                sortedDistributors.forEach(distributor => {
+                    const section = document.createElement('div');
+                    section.classList.add('distributor-section');
+                    section.innerHTML = `<h3>${distributor}</h3>`;
+                    
+                    const poListContainer = document.createElement('div');
+                    poListContainer.classList.add('po-list-container');
+
+                    distributors[distributor].forEach(po => {
+                        const poDiv = document.createElement('div');
+                        poDiv.classList.add('po-item');
+                        const statusBadge = po.status === 'Complete' ? `<span class="badge complete">Complete</span>` : `<span class="badge pending">Pending</span>`;
+
+                        let itemsTableHtml = `
+                            <table class="po-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item Code</th>
+                                        <th>Description</th>
+                                        <th>Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        po.items.forEach(item => {
+                            itemsTableHtml += `
+                                <tr>
+                                    <td>${item.itemCode}</td>
+                                    <td>${item.description}</td>
+                                    <td>${item.quantity}</td>
+                                </tr>
+                            `;
+                        });
+                        itemsTableHtml += `
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        poDiv.innerHTML = `
+                            <div class="po-header">
+                                <div>
+                                    <strong>PO No:</strong> ${po.poNumber}<br>
+                                    <strong>Date:</strong> ${po.poDate}
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            ${itemsTableHtml}
+                        `;
+                        poListContainer.appendChild(poDiv);
+                    });
+                    
+                    section.appendChild(poListContainer);
+                    distributorListContainer.appendChild(section);
+                });
+            }
+
+            renderDistributorList();
+        });
+    </script>
+</body>
+</html>

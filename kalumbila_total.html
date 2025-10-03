@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalumbila Total Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        thead th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #e5e7eb;
+            border-bottom: 2px solid #d1d5db;
+        }
+        tbody tr {
+            background-color: #f9fafb;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        tbody tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+        }
+        tbody td {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: normal;
+        }
+        .form-container {
+            padding: 2rem;
+            background-color: #f9fafb;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        .form-container input, .form-container select, .form-container button {
+            border-radius: 8px;
+        }
+
+        /* Modal specific styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6 lg:p-8">
+
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Kalumbila Total Inventory</h1>
+
+        <div class="form-container mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add New Item</h2>
+            <form id="addItemForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="field-group">
+                        <label for="itemCode" class="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
+                        <input type="text" id="itemCode" name="itemCode" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="field-group">
+                        <label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input type="text" id="itemDescription" name="itemDescription" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="field-group">
+                        <label for="totalNeeded" class="block text-sm font-medium text-gray-700 mb-1">Total Needed</label>
+                        <input type="number" id="totalNeeded" name="totalNeeded" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
+                    </div>
+                    <div class="field-group">
+                        <label for="totalSent" class="block text-sm font-medium text-gray-700 mb-1">Total Sent</label>
+                        <input type="number" id="totalSent" name="totalSent" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 transition duration-300 ease-in-out">Add Item</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table id="itemTable">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Item Code</th>
+                        <th>Description</th>
+                        <th>Current Stock</th>
+                        <th>Total Needed</th>
+                        <th>Total Sent</th>
+                        <th>Balance Remaining</th>
+                        <th class="rounded-tr-lg">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="updateModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Update Item</h3>
+            <p id="modalItemCode" class="text-sm font-mono text-gray-600 mb-2"></p>
+            <p id="modalItemDescription" class="text-md text-gray-700 mb-4"></p>
+            <form id="updateForm" class="space-y-4">
+                <div>
+                    <label for="modalTotalNeeded" class="block text-sm font-medium text-gray-700 mb-1">Total Needed</label>
+                    <input type="number" id="modalTotalNeeded" name="modalTotalNeeded" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="modalTotalSent" class="block text-sm font-medium text-gray-700 mb-1">Total Sent</label>
+                    <input type="number" id="modalTotalSent" name="modalTotalSent" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" id="cancelUpdate" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 transition duration-300 ease-in-out">Cancel</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 transition duration-300 ease-in-out">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let items = {
+                'K-101': { description: 'Fibre Optic Cable, SM, 24 Core, ADSS, 1000m Roll', needed: 150, sent: 75 },
+                'K-102': { description: 'Patch Panel, FO, SC, 24-way, Single Mode', needed: 80, sent: 30 },
+                'K-103': { description: 'Fibre Patch Cord, SM, LC-LC, 2m', needed: 300, sent: 200 },
+                'K-104': { description: 'GPON OLT, SFP Module, Class C+', needed: 10, sent: 5 },
+                'K-105': { description: 'Network Switch, 24-Port, PoE+, Gigabit', needed: 15, sent: 10 },
+                'K-106': { description: 'Wireless Access Point, AC Pro', needed: 60, sent: 40 },
+                'K-107': { description: 'Enclosure, Outdoor, IP67, 300x400x150mm', needed: 20, sent: 15 },
+                'K-108': { description: 'Media Converter, Gigabit Ethernet to SFP', needed: 25, sent: 15 },
+                'K-109': { description: 'Rack Mount, 19 Inch, 9U', needed: 12, sent: 8 },
+                'K-110': { description: 'Splicing Machine, Fusion Splicer Kit', needed: 2, sent: 1 },
+                'K-111': { description: 'FO Splice Closure, 24 Core, In-line', needed: 50, sent: 20 },
+                'K-112': { description: 'Fibre Cable, Multi-mode, 6 Core, Indoor/Outdoor, 500m Roll', needed: 30, sent: 15 },
+                'K-113': { description: 'Optical Power Meter', needed: 5, sent: 3 },
+                'K-114': { description: 'OTDR (Optical Time-Domain Reflectometer), 1310/1550nm', needed: 2, sent: 1 },
+                'K-115': { description: 'Fibre Distribution Box, 16 Port, SC', needed: 40, sent: 25 },
+                'K-116': { description: 'Cable Tie, Nylon, 4.8x250mm, Black', needed: 5000, sent: 3000 },
+                'K-117': { description: 'RJ45 Connector, Cat6, Unshielded', needed: 1000, sent: 800 },
+                'K-118': { description: 'Cat6 Cable, UTP, Solid Core, 305m Box', needed: 100, sent: 60 },
+                'K-119': { description: 'Ethernet Patch Cord, Cat6, 3m', needed: 500, sent: 350 },
+                'K-120': { description: 'Server Rack, 42U, 600x1000mm', needed: 5, sent: 2 },
+                '22906': { description: 'SOCKET ARTEOR;RJ45;CAT6 UTP;1 MODULE WHITE;LEGRAND 572302', needed: 0, sent: 0 },
+                '49557': { description: 'RJ45 CAT6 CABLE PLUG SHIELDED CONNECTOR;SOLID AND STRANDED;CW SLOT;UBNT-TC-CON-100', needed: 0, sent: 0 },
+                '58807': { description: 'SWITCH;8 PORT;C3650;CISCO;PoE;WS-C3560CX-8PC-S', needed: 0, sent: 0 },
+                '58861': { description: 'Cable;Patch;0.5M UTP;Cat 5E Flex;Fly Lead Gray;LINK-0.5GR;LINKBASIC', needed: 0, sent: 0 },
+                '58866': { description: 'Patch;Lead 3.0M;Fly Lead Gray;Cat 5E Flex;LINK-3.0GR;LINKBASIC', needed: 0, sent: 0 },
+                '58872': { description: 'Cable;UTP 500M;LINKBASIC;CAT6E', needed: 0, sent: 0 },
+                '58874': { description: 'Patch;Lead SC-LC 2.0M Fiber;', needed: 0, sent: 0 },
+                '58875': { description: 'Patch;Lead SC-LC 3.0M Fiber', needed: 0, sent: 0 },
+                '58876': { description: 'Patch;Lead LC-LC 2.0M;Fiber;', needed: 0, sent: 0 },
+                '58877': { description: 'Patch;Lead LC-LC 3.0M Fiber;', needed: 0, sent: 0 },
+                '58880': { description: 'Connector;IEC-320 C13;APC', needed: 0, sent: 0 },
+                '58890': { description: 'Connector;IEC-320 C14;APC', needed: 0, sent: 0 },
+                '58893': { description: 'CRIMPING;TOOL;RJ45&RJ11;ETHERNET/PHONE CABLE CUTTER;TRENDNET;TC-CT68', needed: 0, sent: 0 },
+                '58912': { description: 'ACCESS POINT;INDOOR;UNIFIAP;802.11a/b/g/n/ac;48V PoE;UBIQUITI;UAP-AC-PRO', needed: 0, sent: 0 },
+                '69889': { description: 'Patch;Linkbasic;CAT5E;24 PORT', needed: 0, sent: 0 },
+                '69895': { description: 'PANEL;PATCH;SC;24 PORT;FIB/SC', needed: 0, sent: 0 },
+                '76706': { description: 'Connector;RJ45', needed: 0, sent: 0 },
+                '76707': { description: 'Boot;Rubber;RJ45', needed: 0, sent: 0 },
+                '80484': { description: 'RADIO; UBIQUITI; 5GHz; AIRMAX AC; ROCKET; LITE PTMP; R5AC-LITE', needed: 0, sent: 0 },
+                '80485': { description: 'Ubiquiti Power over Ethemet;Injector;24v,1Amp PoE with SA Power;UB-POE24', needed: 0, sent: 0 },
+                '102755': { description: 'DISH;UBIQUITI5GHZ 30 dBi DUAL POLARIZED;5100-5800MHZ,2FT,SMA(F)RPX2,PTP ISO 35 Db', needed: 0, sent: 0 },
+                '107279': { description: 'PHONE;CISCO IP;8811;', needed: 0, sent: 0 },
+                '107282': { description: 'ACCESS POINT;OUTDOOR;UNIFI MESH AP;802.11a/b/g/n/ac;48V PoE;UBIQUITI;UAP-AC-M-PRO', needed: 0, sent: 0 },
+                '107230': { description: 'ADAPTER;48V PoE;WITH GIGABIT LAN PORT;UBIQUITI NETWORKS;POE-48-24W-G', needed: 0, sent: 0 },
+                '108154': { description: 'CABINET 9U;NETWORK;WALL MOUNT;SWING FRAME', needed: 0, sent: 0 },
+                '109815': { description: 'SWITCH;48 PORT;POE+;4x10G UPLINK;CW LICENCE;CISCO;C9200L-48P-4X-E', needed: 0, sent: 0 },
+                '124500': { description: 'SWITCH;CISCO;24 PORT;C9200L 24P-4X-E;CW LICENCE', needed: 0, sent: 0 },
+                '130047': { description: 'MODULE;TRANSCEIVER;CISCO COMPATIBLE 10GBASE-T SFP+;COPPER RJ-45;SFP-10G-T-CURV', needed: 0, sent: 0 },
+                '140064': { description: 'CISCO COMPATIBLE;10GBASE-BX10-D BIDISFP+1330NM-TX/1270NM-RX 10KM INDUSTRIAL DOM', needed: 0, sent: 0 },
+                '140065': { description: 'CISCO COMPATIBLE;10GBASE-BX10-U BIDI SFP+1270NM-TX/1330NM-RX 10KM INDUSTRIAL DOM', needed: 0, sent: 0 },
+                '140068': { description: 'SWITCH;CISCO;16 PORT;1/10G SFP+;C9500-16X-E;CW LICENSE', needed: 0, sent: 0 },
+                '140619': { description: 'SOCKET;FACEPLATE;RJ45;DOUBLE INSERT;WITH 3X3 PVC;BACK BOX', needed: 0, sent: 0 },
+                '141191': { description: 'CABLE;POWER SPLITTER CORD;4WAY UPS;C14 to C13', needed: 0, sent: 0 },
+                '142350': { description: 'TRANSCIEVER;CISCO;GLC-BX-D;COMPATIBLE;1GB-BX-D;BiDi SFP 10KM;1 Gb SFP 10Km GLC-BX-D-C', needed: 0, sent: 0 },
+                '142351': { description: 'TRANSCIEVER;CISCO;GLC-BX-U COMPATIBLE;1GB-BX-U;BiDi SFP 10KM;1 Gb SFP 10Km GLC-BX-U-C', needed: 0, sent: 0 },
+                '142352': { description: 'TRANSCIEVER;CISCO;GLC-BX-20D COMPATIBLE;1GB-BX-D BiDi SFP;20KM;1 Gb SFP 20Km GLC-BX-D20-', needed: 0, sent: 0 },
+                '142353': { description: 'TRANSCIEVER;CISC0;GLC-BX-20U COMPATIBLE;1GB-BX-U;BiDi SFP 20KM;1 Gb SFP 20Km GLC-BX-U20', needed: 0, sent: 0 },
+                '142517': { description: 'CISCO SWITCH MODULE;C9200;4x1G/10G;C9200-NM-4X', needed: 0, sent: 0 },
+                '143947': { description: 'PANEL;PATCH;FIBRE;SC;PORT;48;FIB/SC;CW COUPLERS;SUN;TELECOM;1U;8;1U8PATCHPANEL', needed: 0, sent: 0 },
+                '147447': { description: 'ONU;SUN TELECOM;OPT NETWORK;UNIT;1 PORT SCUPC;4 PORT;10/100MB RJ45', needed: 0, sent: 0 },
+                '147448': { description: 'ONU;SUN TELECOM;OPT NETWORK;UNIT;1 PORT SCIUPC;1 PORT;100/1000MB RJ45', needed: 0, sent: 0 },
+                '148859': { description: 'WIRELESS;ACCESS POINT;OUTDOOR;EXT ANTENNA;CISC0;C9124AXE-E', needed: 0, sent: 0 },
+                '148860': { description: 'WIRELESS;ACCESS POINT;INDOOR;INTERNAL 802.11AX;CISCO;C9120AXI-E', needed: 0, sent: 0 },
+                '148862': { description: 'ANTENNA;OMNI;DUAL BAND;2.4G 6DBl;5G 8DBI;CISCO;AIR-ANT2568VG-NS', needed: 0, sent: 0 },
+                '148863': { description: 'WIRELESS;POLEWALL;MOUNT;KIT;CISCO CATALYST APS;AIR-MNT-VERT1', needed: 0, sent: 0 },
+                '156393': { description: 'CISCO;WEBEX;ROOM KIT AND ACCESSORIES', needed: 0, sent: 0 },
+                '160222': { description: 'CATALYST 9300 12 PORT 25/G/10G/1G SFP 28 WITH MODULAR UPLIFTS NETWORK ESSENTIALS C9300X-12Y-E', needed: 0, sent: 0 },
+                '160223': { description: 'CATALYST 9300 24- PORT 25G/10G/1G SFP 28 WITH MODULAR UPLINKS, NETWORK SESSENTIALS C9300X-24Y-E', needed: 0, sent: 0 },
+                '162425': { description: 'CISCO C9300X-NM-8Y CATALYST 9300 SFP MODULE NEW C9300X-NM-8Y', needed: 0, sent: 0 },
+                '160221': { description: 'CISCO C9300X-NM-8Y CATALYST 9300 SFP MODULE NEW C9300X-NM-8Y', needed: 0, sent: 0 },
+                '163926': { description: '', needed: 0, sent: 0 }
+            };
+
+            // Stock data from stock.html
+            let stockData = [
+                {
+                    itemCode: '44770',
+                    description: 'PANEL; MDU FO PATCH; 12 WAY SC; SINGLE MODE; C/W PIGTAILS AND SPLICE BRIDG',
+                    currentStock: 10,
+                    history: []
+                },
+                {
+                    itemCode: '30597',
+                    description: 'PANEL; PATCH; OPTIC; FIBRE; 19IN (1U); 3MM; SP3-E;2C-SS; C/W 24 SINGLE MODE PIGTAILS',
+                    currentStock: 25,
+                    history: []
+                },
+                {
+                    itemCode: '102586',
+                    description: 'DEVICE; WIFI; FIBER; GPON CPE; UBIQUITI UISP; UB-UF-WIFI',
+                    currentStock: 5,
+                    history: []
+                },
+                {
+                    itemCode: '69664',
+                    description: 'CISCO SFP-10G-SR COMPATIBLE; 10GBASE-SR SFP+ 850NM 300M DOM TRANSCEIVER MODULE',
+                    currentStock: 50,
+                    history: []
+                },
+                {
+                    itemCode: '104645',
+                    description: 'C9200L-24P-4X-E - Catalyst 9200L 24 port PoE+ 4x10g Uplink Switch, Cisco C9200L Cisco DNA Essentials, 48 port, 3 Year Term License',
+                    currentStock: 2,
+                    history: []
+                },
+                {
+                    itemCode: '22906',
+                    description: 'SOCKET ARTEOR;RJ45;CAT6 UTP;1 MODULE WHITE;LEGRAND 572302',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '49557',
+                    description: 'RJ45 CAT6 CABLE PLUG SHIELDED CONNECTOR;SOLID AND STRANDED;CW SLOT;UBNT-TC-CON-100',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58807',
+                    description: 'SWITCH;8 PORT;C3650;CISCO;PoE;WS-C3560CX-8PC-S',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58861',
+                    description: 'Cable;Patch;0.5M UTP;Cat 5E Flex;Fly Lead Gray;LINK-0.5GR;LINKBASIC',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58866',
+                    description: 'Patch;Lead 3.0M;Fly Lead Gray;Cat 5E Flex;LINK-3.0GR;LINKBASIC',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58872',
+                    description: 'Cable;UTP 500M;LINKBASIC;CAT6E',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58874',
+                    description: 'Patch;Lead SC-LC 2.0M Fiber;',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58875',
+                    description: 'Patch;Lead SC-LC 3.0M Fiber',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58876',
+                    description: 'Patch;Lead LC-LC 2.0M;Fiber;',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58877',
+                    description: 'Patch;Lead LC-LC 3.0M Fiber;',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58880',
+                    description: 'Connector;IEC-320 C13;APC',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58890',
+                    description: 'Connector;IEC-320 C14;APC',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58893',
+                    description: 'CRIMPING;TOOL;RJ45&RJ11;ETHERNET/PHONE CABLE CUTTER;TRENDNET;TC-CT68',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '58912',
+                    description: 'ACCESS POINT;INDOOR;UNIFIAP;802.11a/b/g/n/ac;48V PoE;UBIQUITI;UAP-AC-PRO',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '69889',
+                    description: 'Patch;Linkbasic;CAT5E;24 PORT',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '69895',
+                    description: 'PANEL;PATCH;SC;24 PORT;FIB/SC',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '76706',
+                    description: 'Connector;RJ45',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '76707',
+                    description: 'Boot;Rubber;RJ45',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '80484',
+                    description: 'RADIO; UBIQUITI; 5GHz; AIRMAX AC; ROCKET; LITE PTMP; R5AC-LITE',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '80485',
+                    description: 'Ubiquiti Power over Ethemet;Injector;24v,1Amp PoE with SA Power;UB-POE24',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '102755',
+                    description: 'DISH;UBIQUITI5GHZ 30 dBi DUAL POLARIZED;5100-5800MHZ,2FT,SMA(F)RPX2,PTP ISO 35 Db',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '107279',
+                    description: 'PHONE;CISCO IP;8811;',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '107282',
+                    description: 'ACCESS POINT;OUTDOOR;UNIFI MESH AP;802.11a/b/g/n/ac;48V PoE;UBIQUITI;UAP-AC-M-PRO',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '107230',
+                    description: 'ADAPTER;48V PoE;WITH GIGABIT LAN PORT;UBIQUITI NETWORKS;POE-48-24W-G',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '108154',
+                    description: 'CABINET 9U;NETWORK;WALL MOUNT;SWING FRAME',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '109815',
+                    description: 'SWITCH;48 PORT;POE+;4x10G UPLINK;CW LICENCE;CISCO;C9200L-48P-4X-E',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '124500',
+                    description: 'SWITCH;CISCO;24 PORT;C9200L 24P-4X-E;CW LICENCE',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '130047',
+                    description: 'MODULE;TRANSCEIVER;CISCO COMPATIBLE 10GBASE-T SFP+;COPPER RJ-45;SFP-10G-T-CURV',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '140064',
+                    description: 'CISCO COMPATIBLE;10GBASE-BX10-D BIDISFP+1330NM-TX/1270NM-RX 10KM INDUSTRIAL DOM',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '140065',
+                    description: 'CISCO COMPATIBLE;10GBASE-BX10-U BIDI SFP+1270NM-TX/1330NM-RX 10KM INDUSTRIAL DOM',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '140068',
+                    description: 'SWITCH;CISCO;16 PORT;1/10G SFP+;C9500-16X-E;CW LICENSE',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '140619',
+                    description: 'SOCKET;FACEPLATE;RJ45;DOUBLE INSERT;WITH 3X3 PVC;BACK BOX',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '141191',
+                    description: 'CABLE;POWER SPLITTER CORD;4WAY UPS;C14 to C13',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '142350',
+                    description: 'TRANSCIEVER;CISCO;GLC-BX-D;COMPATIBLE;1GB-BX-D;BiDi SFP 10KM;1 Gb SFP 10Km GLC-BX-D-C',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '142351',
+                    description: 'TRANSCIEVER;CISCO;GLC-BX-U COMPATIBLE;1GB-BX-U;BiDi SFP 10KM;1 Gb SFP 10Km GLC-BX-U-C',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '142352',
+                    description: 'TRANSCIEVER;CISCO;GLC-BX-20D COMPATIBLE;1GB-BX-D BiDi SFP;20KM;1 Gb SFP 20Km GLC-BX-D20-',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '142353',
+                    description: 'TRANSCIEVER;CISC0;GLC-BX-20U COMPATIBLE;1GB-BX-U;BiDi SFP 20KM;1 Gb SFP 20Km GLC-BX-U20',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '142517',
+                    description: 'CISCO SWITCH MODULE;C9200;4x1G/10G;C9200-NM-4X',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '143947',
+                    description: 'PANEL;PATCH;FIBRE;SC;PORT;48;FIB/SC;CW COUPLERS;SUN;TELECOM;1U;8;1U8PATCHPANEL',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '147447',
+                    description: 'ONU;SUN TELECOM;OPT NETWORK;UNIT;1 PORT SCUPC;4 PORT;10/100MB RJ45',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '147448',
+                    description: 'ONU;SUN TELECOM;OPT NETWORK;UNIT;1 PORT SCIUPC;1 PORT;100/1000MB RJ45',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '148859',
+                    description: 'WIRELESS;ACCESS POINT;OUTDOOR;EXT ANTENNA;CISC0;C9124AXE-E',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '148860',
+                    description: 'WIRELESS;ACCESS POINT;INDOOR;INTERNAL 802.11AX;CISCO;C9120AXI-E',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '148862',
+                    description: 'ANTENNA;OMNI;DUAL BAND;2.4G 6DBl;5G 8DBI;CISCO;AIR-ANT2568VG-NS',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '148863',
+                    description: 'WIRELESS;POLEWALL;MOUNT;KIT;CISCO CATALYST APS;AIR-MNT-VERT1',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '156393',
+                    description: 'CISCO;WEBEX;ROOM KIT AND ACCESSORIES',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '160222',
+                    description: 'CATALYST 9300 12 PORT 25/G/10G/1G SFP 28 WITH MODULAR UPLIFTS NETWORK ESSENTIALS C9300X-12Y-E',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '160223',
+                    description: 'CATALYST 9300 24- PORT 25G/10G/1G SFP 28 WITH MODULAR UPLINKS, NETWORK SESSENTIALS C9300X-24Y-E',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '162425',
+                    description: 'CISCO C9300X-NM-8Y CATALYST 9300 SFP MODULE NEW C9300X-NM-8Y',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '160221',
+                    description: 'CISCO C9300X-NM-8Y CATALYST 9300 SFP MODULE NEW C9300X-NM-8Y',
+                    currentStock: 0,
+                    history: []
+                },
+                {
+                    itemCode: '163926',
+                    description: '',
+                    currentStock: 0,
+                    history: []
+                }
+            ];
+
+            const stockMap = new Map(stockData.map(item => [item.itemCode, item.currentStock]));
+
+            const itemTableBody = document.querySelector('#itemTable tbody');
+            const addItemForm = document.getElementById('addItemForm');
+            const updateModal = document.getElementById('updateModal');
+            const updateForm = document.getElementById('updateForm');
+            const modalItemCode = document.getElementById('modalItemCode');
+            const modalItemDescription = document.getElementById('modalItemDescription');
+            const modalTotalNeededInput = document.getElementById('modalTotalNeeded');
+            const modalTotalSentInput = document.getElementById('modalTotalSent');
+            const cancelButton = document.getElementById('cancelUpdate');
+            let currentItemCode = null;
+
+            // Function to render the table with the current data
+            function renderTable() {
+                itemTableBody.innerHTML = '';
+                for (const code in items) {
+                    const item = items[code];
+                    const balance = (item.needed !== undefined && item.sent !== undefined) ? item.needed - item.sent : 'N/A';
+                    const currentStock = stockMap.get(code) || 0;
+                    const row = document.createElement('tr');
+                    row.classList.add('transition-all', 'duration-200');
+                    row.innerHTML = `
+                        <td class="font-mono text-gray-800">${code}</td>
+                        <td class="text-gray-600">${item.description}</td>
+                        <td class="text-center font-semibold text-gray-800">${currentStock}</td>
+                        <td class="text-center font-semibold text-gray-800">${item.needed}</td>
+                        <td class="text-center font-semibold text-gray-800">${item.sent}</td>
+                        <td class="text-center font-bold ${balance > 0 ? 'text-red-500' : 'text-green-500'}">${balance}</td>
+                        <td>
+                            <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 text-sm rounded transition duration-300 ease-in-out" data-code="${code}">Edit</button>
+                        </td>
+                    `;
+                    itemTableBody.appendChild(row);
+                }
+
+                // Add event listeners to the new edit buttons
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const code = event.target.dataset.code;
+                        openUpdateModal(code);
+                    });
+                });
+            }
+
+            // Function to open the update modal
+            function openUpdateModal(code) {
+                currentItemCode = code;
+                const item = items[code];
+                modalItemCode.textContent = `Item Code: ${code}`;
+                modalItemDescription.textContent = item.description;
+                modalTotalNeededInput.value = item.needed !== undefined ? item.needed : 0;
+                modalTotalSentInput.value = item.sent !== undefined ? item.sent : 0;
+                updateModal.classList.remove('hidden');
+            }
+
+            // Function to handle form submission for new item
+            addItemForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const code = document.getElementById('itemCode').value.trim();
+                const description = document.getElementById('itemDescription').value.trim();
+                const needed = parseInt(document.getElementById('totalNeeded').value, 10);
+                const sent = parseInt(document.getElementById('totalSent').value, 10);
+
+                if (code && description && !isNaN(needed) && !isNaN(sent)) {
+                    items[code] = { description, needed, sent };
+                    renderTable();
+                    addItemForm.reset();
+                    document.getElementById('totalNeeded').value = "0";
+                    document.getElementById('totalSent').value = "0";
+                }
+            });
+
+            // Function to handle form submission for updating item
+            updateForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (currentItemCode) {
+                    const needed = parseInt(modalTotalNeededInput.value, 10);
+                    const sent = parseInt(modalTotalSentInput.value, 10);
+                    if (!isNaN(needed) && !isNaN(sent)) {
+                        items[currentItemCode].needed = needed;
+                        items[currentItemCode].sent = sent;
+                        renderTable();
+                        updateModal.classList.add('hidden');
+                    }
+                }
+            });
+
+            // Handle cancel button click in modal
+            cancelButton.addEventListener('click', () => {
+                updateModal.classList.add('hidden');
+            });
+
+            // Initial render
+            renderTable();
+        });
+    </script>
+</body>
+</html>

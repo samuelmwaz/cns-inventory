@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributors</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-container {
+            padding: 2rem;
+            background-color: #f9fafb;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        .form-container input, .form-container select, .form-container button {
+            border-radius: 8px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        thead th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #e5e7eb;
+            border-bottom: 2px solid #d1d5db;
+        }
+        tbody tr {
+            background-color: #f9fafb;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        tbody tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+        }
+        tbody td {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: normal;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<div class="nav-links">
+            <a href="stock.html" class="nav-link" id="link-stock">In-Store Stock</a>
+             <a href="first.html" class="tab-button"> main page</a>
+            <a href="distributors.html" class="nav-link" id="link-stock">distributors</a>
+            <a href="grn.html" class="nav-link" id="link-grn">Goods Received Note</a>
+            <a href="delivary.html" class="nav-link" id="link-po">delivary note </a>
+            <a href=" clients.html" class="nav-link" id="link-distributors">Clients</a>
+            <a href="invoice.html " class="nav-link" id="link-distributors"> invoice </a>
+            <a href=" salesorder.html" class="nav-link" id="link-distributors">sales order</a>
+            <a href="kalumbila_total.html" class="nav-link" id="link-kalumbila">Kalumbila Totals</a>
+            <a href="kansanshi_total.html" class="nav-link" id="link-kalumbila">kansanshi_total</a>
+        </div>
+<body class="bg-gray-100 p-4 sm:p-6 lg:p-8">
+
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Distributors</h1>
+
+        <!-- Add Invoice Form -->
+        <div class="form-container mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Purchase Invoice</h2>
+            <form id="addInvoiceForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="invoiceNumber" class="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                        <input type="text" id="invoiceNumber" name="invoiceNumber" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="invoiceDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="invoiceDate" name="invoiceDate" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div id="invoiceItems" class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-2">Invoice Items</h3>
+                    <div class="item-row grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                        <div class="sm:col-span-1">
+                            <label for="itemCode-1" class="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
+                            <!-- Replaced text input with a select dropdown for item code -->
+                            <select id="itemCode-1" name="itemCode" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Item Code</option>
+                                <optgroup label="Kansanshi">
+                                    <!-- Options populated by JS -->
+                                </optgroup>
+                                <optgroup label="Kalumbila">
+                                    <!-- Options populated by JS -->
+                                </optgroup>
+                                <option value="other">Other (Manual Entry)</option>
+                            </select>
+                            <input type="text" id="manualItemCode-1" name="manualItemCode" class="hidden w-full p-2 mt-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter custom item code">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="itemDescription-1" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <input type="text" id="itemDescription-1" name="itemDescription" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label for="itemQuantity-1" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                            <input type="number" id="itemQuantity-1" name="itemQuantity" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" value="1">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="addItemBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 transition duration-300 ease-in-out">Add Another Item</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 transition duration-300 ease-in-out">Submit Invoice</button>
+            </form>
+        </div>
+
+        <!-- Invoice List Section -->
+        <div class="table-container">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Recent Invoices</h2>
+            <table id="invoiceTable">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Invoice Number</th>
+                        <th>Date</th>
+                        <th>Items Count</th>
+                        <th class="rounded-tr-lg">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Invoice rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- View Invoice Modal -->
+    <div id="viewInvoiceModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Invoice Details</h3>
+            <p class="text-sm font-mono text-gray-600 mb-2">Invoice #<span id="modalInvoiceNumber"></span></p>
+            <p class="text-sm text-gray-700 mb-4">Date: <span id="modalInvoiceDate"></span></p>
+            
+            <div class="table-container max-h-60 overflow-y-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th>Item Code</th>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalItemsTableBody">
+                        <!-- Invoice items will be displayed here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <button type="button" id="closeModalBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 transition duration-300 ease-in-out">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let invoices = []; // In-memory cache
+
+            // Pre-defined item codes for Kansanshi and Kalumbila
+            const kansanshiCodes = [
+                'K-001', 'K-002', 'K-003', 'K-004', '74574', '44770', '30597', '102586', '31254',
+                '31248', '69664', '69676', '69677', '38525', '29734', '29738', '29737',
+                '31595', '104647', '104646', '69672', '32535', '18177', '102587', '64410',
+                'F61770', '104645', '104644', '55985', '52991', '77750', '77751', '113425',
+                '113423', '113417', '113420', '113418', '113422', '113424', '113472', '113477'
+            ];
+            const kalumbilaCodes = [
+                'KAL-001', 'KAL-002', 'KAL-003', 'KAL-004', 'K-101', 'K-102', 'K-103', 'K-104', 'K-105', 'K-106',
+                'K-107', 'K-108', 'K-109', 'K-110', 'K-111', 'K-112', 'K-113', 'K-114', 'K-115', 'K-116',
+                'K-117', 'K-118', 'K-119', 'K-120', '22906', '49557', '58807', '58861', '58866', '58872',
+                '58874', '58875', '58876', '58877', '58880', '58890', '58893', '58912', '69889', '69895',
+                '76706', '76707', '80484', '80485', '102755', '107279', '107282', '107230', '108154', '109815',
+                '124500', '130047', '140064', '140065', '140068', '140619', '141191', '142350', '142351', '142352',
+                '142353', '142517', '143947', '147447', '147448', '148859', '148860', '148862', '148863', '156393',
+                '160222', '160223', '162425', '160221', '163926'
+            ];
+
+            const addInvoiceForm = document.getElementById('addInvoiceForm');
+            const addItemBtn = document.getElementById('addItemBtn');
+            const invoiceItemsContainer = document.getElementById('invoiceItems');
+            const invoiceTableBody = document.querySelector('#invoiceTable tbody');
+            const viewInvoiceModal = document.getElementById('viewInvoiceModal');
+            const modalInvoiceNumber = document.getElementById('modalInvoiceNumber');
+            const modalInvoiceDate = document.getElementById('modalInvoiceDate');
+            const modalItemsTableBody = document.getElementById('modalItemsTableBody');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            let itemCounter = 1;
+
+            function saveInvoices() {
+                // This function is now a no-op as we handle saving per-month
+            }
+
+            function loadInvoices() {
+                invoices = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('invoices-')) {
+                        const monthlyInvoices = JSON.parse(localStorage.getItem(key));
+                        invoices.push(...monthlyInvoices);
+                    }
+                }
+                // Sort invoices by date, most recent first
+                invoices.sort((a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate));
+            }
+
+            function populateItemCodeSelect(selectElement, manualInputId) {
+                const kansanshiOptgroup = selectElement.querySelector('optgroup[label="Kansanshi"]');
+                const kalumbilaOptgroup = selectElement.querySelector('optgroup[label="Kalumbila"]');
+
+                kansanshiCodes.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = code;
+                    kansanshiOptgroup.appendChild(option);
+                });
+
+                kalumbilaCodes.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = code;
+                    kalumbilaOptgroup.appendChild(option);
+                });
+
+                // Add event listener to handle 'Other' option
+                selectElement.addEventListener('change', (event) => {
+                    const manualInput = document.getElementById(manualInputId);
+                    if (event.target.value === 'other') {
+                        manualInput.classList.remove('hidden');
+                        manualInput.required = true;
+                    } else {
+                        manualInput.classList.add('hidden');
+                        manualInput.required = false;
+                        manualInput.value = '';
+                    }
+                });
+            }
+
+            function renderInvoices() {
+                invoiceTableBody.innerHTML = '';
+                invoices.forEach((invoice, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="font-mono">${invoice.invoiceNumber}</td>
+                        <td>${invoice.invoiceDate}</td>
+                        <td>${invoice.items.length}</td>
+                        <td>
+                            <button onclick="viewInvoice('${invoice.invoiceNumber}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded text-xs transition duration-300 ease-in-out">View</button>
+                        </td>
+                    `;
+                    invoiceTableBody.appendChild(row);
+                });
+            }
+
+            window.viewInvoice = function(invoiceNumber) {
+                const invoice = invoices.find(inv => inv.invoiceNumber === invoiceNumber);
+                if (invoice) {
+                    modalInvoiceNumber.textContent = invoice.invoiceNumber;
+                    modalInvoiceDate.textContent = invoice.invoiceDate;
+                    modalItemsTableBody.innerHTML = '';
+
+                    invoice.items.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="font-mono">${item.itemCode}</td>
+                            <td>${item.description}</td>
+                            <td>${item.quantity}</td>
+                        `;
+                        modalItemsTableBody.appendChild(row);
+                    });
+
+                    viewInvoiceModal.classList.remove('hidden');
+                }
+            };
+
+            addItemBtn.addEventListener('click', () => {
+                itemCounter++;
+                const newItemRow = document.createElement('div');
+                newItemRow.className = "item-row grid grid-cols-1 sm:grid-cols-4 gap-4 items-end";
+                newItemRow.innerHTML = `
+                    <div class="sm:col-span-1">
+                        <label for="itemCode-${itemCounter}" class="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
+                        <select id="itemCode-${itemCounter}" name="itemCode" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Item Code</option>
+                            <optgroup label="Kansanshi"></optgroup>
+                            <optgroup label="Kalumbila"></optgroup>
+                            <option value="other">Other (Manual Entry)</option>
+                        </select>
+                        <input type="text" id="manualItemCode-${itemCounter}" name="manualItemCode" class="hidden w-full p-2 mt-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter custom item code">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="itemDescription-${itemCounter}" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input type="text" id="itemDescription-${itemCounter}" name="itemDescription" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="sm:col-span-1">
+                        <label for="itemQuantity-${itemCounter}" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                        <input type="number" id="itemQuantity-${itemCounter}" name="itemQuantity" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" value="1">
+                    </div>
+                `;
+                invoiceItemsContainer.appendChild(newItemRow);
+                populateItemCodeSelect(document.getElementById(`itemCode-${itemCounter}`), `manualItemCode-${itemCounter}`);
+            });
+
+            addInvoiceForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const invoiceNumber = document.getElementById('invoiceNumber').value.trim();
+                const invoiceDate = document.getElementById('invoiceDate').value.trim();
+                const itemRows = document.querySelectorAll('.item-row');
+                const items = [];
+
+                itemRows.forEach(row => {
+                    const itemCodeSelect = row.querySelector('select[name="itemCode"]');
+                    const manualItemCodeInput = row.querySelector('input[name="manualItemCode"]');
+                    let itemCode = '';
+
+                    if (itemCodeSelect.value === 'other') {
+                        itemCode = manualItemCodeInput.value.trim();
+                    } else {
+                        itemCode = itemCodeSelect.value.trim();
+                    }
+                    
+                    const description = row.querySelector('input[name="itemDescription"]').value.trim();
+                    const quantity = parseInt(row.querySelector('input[name="itemQuantity"]').value, 10);
+                    if (itemCode && description && !isNaN(quantity) && quantity > 0) {
+                        items.push({ itemCode, description, quantity });
+                    }
+                });
+
+                if (invoiceNumber && invoiceDate && items.length > 0) {
+                    const newInvoice = { invoiceNumber, invoiceDate, items };
+                    
+                    // Generate a month-based key for localStorage
+                    const [year, month] = invoiceDate.split('-');
+                    const localStorageKey = `invoices-${year}-${month}`;
+
+                    // Get existing invoices for the month, or start with an empty array
+                    const existingInvoices = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+                    existingInvoices.push(newInvoice);
+                    
+                    // Save the updated list back to localStorage
+                    localStorage.setItem(localStorageKey, JSON.stringify(existingInvoices));
+
+                    loadInvoices(); // Reload all invoices from localStorage
+                    renderInvoices();
+                    addInvoiceForm.reset();
+
+                    // Reset to a single item row
+                    invoiceItemsContainer.innerHTML = `
+                        <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-2">Invoice Items</h3>
+                        <div class="item-row grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                            <div class="sm:col-span-1">
+                                <label for="itemCode-1" class="block text-sm font-medium text-gray-700 mb-1">Item Code</label>
+                                <select id="itemCode-1" name="itemCode" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select Item Code</option>
+                                    <optgroup label="Kansanshi"></optgroup>
+                                    <optgroup label="Kalumbila"></optgroup>
+                                    <option value="other">Other (Manual Entry)</option>
+                                </select>
+                                <input type="text" id="manualItemCode-1" name="manualItemCode" class="hidden w-full p-2 mt-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter custom item code">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="itemDescription-1" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <input type="text" id="itemDescription-1" name="itemDescription" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label for="itemQuantity-1" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                                <input type="number" id="itemQuantity-1" name="itemQuantity" required class="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" value="1">
+                            </div>
+                        </div>
+                    `;
+                    itemCounter = 1;
+                    populateItemCodeSelect(document.getElementById('itemCode-1'), 'manualItemCode-1');
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                viewInvoiceModal.classList.add('hidden');
+            });
+
+            // Initial population and render
+            populateItemCodeSelect(document.getElementById('itemCode-1'), 'manualItemCode-1');
+            loadInvoices();
+            renderInvoices();
+        });
+    </script>
+</body>
+</html>

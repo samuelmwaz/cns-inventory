@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .main-container {
+                display: block;
+                max-width: none;
+                flex-direction: column;
+                padding: 0;
+            }
+            .invoice-container {
+                width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+            }
+            .item-table input, .form-group input, .form-group textarea, .form-group select {
+                border: none !important;
+                background-color: transparent !important;
+            }
+            .item-table th, .item-table td {
+                border-color: #333;
+            }
+        }
+    </style>
+</head>
+<div class="nav-links">
+            <a href="stock.html" class="nav-link" id="link-stock">In-Store Stock</a>
+            <a href="first.html" class="nav-link" id="link-stock"> main page</a>
+            <a href="distributors.html" class="nav-link" id="link-stock">distributors</a>
+            <a href="grn.html" class="nav-link" id="link-grn">Goods Received Note</a>
+            <a href="delivary.html" class="nav-link" id="link-po">delivary note </a>
+            <a href=" clients.html" class="nav-link" id="link-distributors">Clients</a>
+            <a href="invoice.html " class="nav-link" id="link-distributors"> invoice </a>
+            <a href=" salesorder.html" class="nav-link" id="link-distributors">sales order</a>
+            <a href="kalumbila_total.html" class="nav-link" id="link-kalumbila">Kalumbila Totals</a>
+            <a href="kansanshi_total.html" class="nav-link" id="link-kalumbila">kansanshi_total</a>
+        </div>
+<body class="flex justify-center p-8 min-h-screen">
+    <div class="main-container flex flex-col md:flex-row w-full max-w-7xl gap-6">
+
+        <!-- Invoice Form Container -->
+        <div class="invoice-container flex-grow bg-white shadow-lg rounded-xl p-8 flex flex-col gap-6">
+            <header class="text-center pb-6 border-b-2 border-gray-200">
+                <h1 class="font-bold text-4xl text-gray-800 m-0">INVOICE</h1>
+            </header>
+            
+            <!-- Invoice Details -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-wrap gap-6">
+                    <div class="flex-1 flex flex-col min-w-[250px]">
+                        <label for="invoice-number" class="text-sm font-medium text-gray-500 mb-1">Invoice #</label>
+                        <input type="text" id="invoice-number" value="INV-001" class="p-3 border border-gray-300 rounded-lg text-lg transition-colors focus:border-blue-500 focus:outline-none">
+                    </div>
+                    <div class="flex-1 flex flex-col min-w-[250px]">
+                        <label for="invoice-date" class="text-sm font-medium text-gray-500 mb-1">Date</label>
+                        <input type="date" id="invoice-date" class="p-3 border border-gray-300 rounded-lg text-lg transition-colors focus:border-blue-500 focus:outline-none">
+                    </div>
+                    <div class="flex-1 flex flex-col min-w-[250px]">
+                        <label for="due-date" class="text-sm font-medium text-gray-500 mb-1">Due Date</label>
+                        <input type="date" id="due-date" class="p-3 border border-gray-300 rounded-lg text-lg transition-colors focus:border-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-6">
+                    <!-- Bill From Section -->
+                    <div class="flex-1 flex flex-col min-w-[250px]">
+                        <label class="text-sm font-medium text-gray-500 mb-1">Bill From</label>
+                        <input type="text" id="bill-from-name" placeholder="Company Name" class="p-3 border border-gray-300 rounded-lg text-lg mb-2 transition-colors focus:border-blue-500 focus:outline-none">
+                        <input type="text" id="bill-from-address" placeholder="Address" class="p-3 border border-gray-300 rounded-lg text-lg mb-2 transition-colors focus:border-blue-500 focus:outline-none">
+                        <input type="text" id="bill-from-phone" placeholder="Phone Number" class="p-3 border border-gray-300 rounded-lg text-lg transition-colors focus:border-blue-500 focus:outline-none">
+                    </div>
+
+                    <!-- Bill To Section -->
+                    <div class="flex-1 flex flex-col min-w-[250px]">
+                        <label class="text-sm font-medium text-gray-500 mb-1">Bill To</label>
+                        <input type="text" id="bill-to-name" placeholder="Client Name" class="p-3 border border-gray-300 rounded-lg text-lg mb-2 transition-colors focus:border-blue-500 focus:outline-none">
+                        <input type="text" id="bill-to-address" placeholder="Client Address" class="p-3 border border-gray-300 rounded-lg text-lg mb-2 transition-colors focus:border-blue-500 focus:outline-none">
+                        <input type="email" id="bill-to-email" placeholder="Client Email" class="p-3 border border-gray-300 rounded-lg text-lg transition-colors focus:border-blue-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Items -->
+            <div class="flex flex-col gap-4">
+                <h2 class="text-xl font-bold text-gray-800">Invoice Items</h2>
+                <table class="w-full border-collapse mt-4">
+                    <thead>
+                        <tr class="bg-gray-100 font-bold text-gray-600 text-sm uppercase">
+                            <th class="p-4 text-left">Description</th>
+                            <th class="p-4 text-left">Quantity</th>
+                            <th class="p-4 text-left">Unit Price</th>
+                            <th class="p-4 text-left">Total</th>
+                            <th class="p-4 text-left"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice-items-body">
+                        <!-- Item rows will be added here by JS -->
+                    </tbody>
+                </table>
+                <button class="bg-green-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-green-600" onclick="addItem()">Add Item</button>
+            </div>
+
+            <!-- Summary -->
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-end items-center gap-6">
+                    <span class="font-medium text-gray-500">Subtotal:</span>
+                    <span class="font-bold text-gray-800 min-w-[120px] text-right" id="subtotal">ZMW 0.00</span>
+                </div>
+                
+                <div class="flex justify-end items-center gap-6">
+                    <span class="font-medium text-gray-500">Tax (%):</span>
+                    <input type="number" id="tax-rate" value="0" min="0" oninput="calculateTotals()" class="p-2 border border-gray-300 rounded-lg w-[80px] text-right">
+                    <span class="font-bold text-gray-800 min-w-[120px] text-right" id="tax-amount">ZMW 0.00</span>
+                </div>
+
+                <div class="flex justify-end items-center gap-6">
+                    <span class="font-medium text-gray-500">Discount (%):</span>
+                    <input type="number" id="discount-rate" value="0" min="0" oninput="calculateTotals()" class="p-2 border border-gray-300 rounded-lg w-[80px] text-right">
+                    <span class="font-bold text-gray-800 min-w-[120px] text-right" id="discount-amount">ZMW 0.00</span>
+                </div>
+                
+                <div class="flex justify-end items-center gap-6 pt-4 mt-4 border-t-2 border-gray-200">
+                    <span class="font-medium text-gray-500 text-lg">Total:</span>
+                    <span class="font-bold text-blue-600 text-2xl min-w-[120px] text-right" id="total-amount">ZMW 0.00</span>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="actions flex flex-col items-center gap-4 mt-8 no-print">
+                <div id="message-box" class="hidden py-2 px-4 rounded-lg font-semibold w-full text-center"></div>
+                <div class="flex justify-center gap-4 w-full">
+                    <button class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 hover:bg-blue-700" onclick="saveInvoice()">Save Invoice</button>
+                    <button class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 hover:bg-green-600" onclick="window.print()">Print Invoice</button>
+                    <button class="bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 hover:bg-gray-700" onclick="clearInvoice()">Clear Invoice</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Invoices Container -->
+        <div class="no-print w-full md:w-80 bg-white shadow-lg rounded-xl p-6 flex flex-col gap-4">
+            <h2 class="text-xl font-bold text-gray-800 text-center">Saved Invoices</h2>
+            <div class="flex flex-col gap-2 mb-4">
+                <label for="invoice-search" class="text-sm font-medium text-gray-500">Search Invoices</label>
+                <input type="text" id="invoice-search" oninput="searchInvoices()" placeholder="Search by Invoice #" class="p-3 border border-gray-300 rounded-lg text-lg transition-colors focus:border-blue-500 focus:outline-none">
+            </div>
+            <div id="saved-invoices-list" class="flex flex-col gap-4">
+                <p class="text-center text-gray-500">No saved invoices yet</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // In-memory storage for invoices (replaces Firebase)
+        let savedInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+        let allInvoices = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invoice-date').value = today;
+            addItem();
+            loadSavedInvoices();
+        });
+
+        // Load saved invoices from localStorage
+        function loadSavedInvoices() {
+            allInvoices = savedInvoices;
+            renderSavedInvoices(allInvoices);
+        }
+
+        // Search function
+        function searchInvoices() {
+            const searchTerm = document.getElementById('invoice-search').value.toLowerCase();
+            const filteredInvoices = allInvoices.filter(invoice => 
+                invoice.invoiceNumber.toLowerCase().includes(searchTerm)
+            );
+            renderSavedInvoices(filteredInvoices, searchTerm.length > 0);
+        }
+
+        // Renders the list of saved invoices
+        function renderSavedInvoices(invoices, isSearching = false) {
+            const listContainer = document.getElementById('saved-invoices-list');
+            listContainer.innerHTML = '';
+
+            if (invoices.length === 0) {
+                listContainer.innerHTML = '<p class="text-center text-gray-500">No saved invoices found.</p>';
+                return;
+            }
+            
+            // If searching, display a flat list
+            if (isSearching) {
+                invoices.forEach(invoice => {
+                    const invoiceItem = document.createElement('div');
+                    invoiceItem.className = 'bg-gray-100 rounded-md p-3 cursor-pointer transition-colors hover:bg-gray-200 flex justify-between items-center';
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = invoice.invoiceNumber;
+                    textSpan.onclick = () => loadInvoice(invoice.invoiceNumber);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '×';
+                    deleteBtn.className = 'text-red-500 hover:text-red-700 font-bold text-lg';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteInvoice(invoice.invoiceNumber);
+                    };
+                    
+                    invoiceItem.appendChild(textSpan);
+                    invoiceItem.appendChild(deleteBtn);
+                    listContainer.appendChild(invoiceItem);
+                });
+            } else {
+                // Group invoices by month and year
+                const groupedInvoices = invoices.reduce((acc, invoice) => {
+                    const date = new Date(invoice.invoiceDate);
+                    const month = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                    if (!acc[month]) {
+                        acc[month] = [];
+                    }
+                    acc[month].push(invoice);
+                    return acc;
+                }, {});
+
+                for (const month in groupedInvoices) {
+                    const monthContainer = document.createElement('div');
+                    monthContainer.className = 'flex flex-col gap-2';
+                    monthContainer.innerHTML = `<h3 class="font-bold text-gray-600 mt-2">${month}</h3>`;
+
+                    groupedInvoices[month].forEach(invoice => {
+                        const invoiceItem = document.createElement('div');
+                        invoiceItem.className = 'bg-gray-100 rounded-md p-3 cursor-pointer transition-colors hover:bg-gray-200 flex justify-between items-center';
+                        
+                        const textSpan = document.createElement('span');
+                        textSpan.textContent = invoice.invoiceNumber;
+                        textSpan.onclick = () => loadInvoice(invoice.invoiceNumber);
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '×';
+                        deleteBtn.className = 'text-red-500 hover:text-red-700 font-bold text-lg';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            deleteInvoice(invoice.invoiceNumber);
+                        };
+                        
+                        invoiceItem.appendChild(textSpan);
+                        invoiceItem.appendChild(deleteBtn);
+                        monthContainer.appendChild(invoiceItem);
+                    });
+                    listContainer.appendChild(monthContainer);
+                }
+            }
+        }
+
+        // Loads a saved invoice into the form
+        function loadInvoice(invoiceNumber) {
+            const invoice = savedInvoices.find(inv => inv.invoiceNumber === invoiceNumber);
+            
+            if (!invoice) {
+                showMessage("error", `Error: No invoice found with number "${invoiceNumber}".`);
+                return;
+            }
+
+            document.getElementById('invoice-number').value = invoice.invoiceNumber;
+            document.getElementById('invoice-date').value = invoice.invoiceDate;
+            document.getElementById('due-date').value = invoice.dueDate || '';
+            
+            // Handle structured data for bill-from and bill-to
+            if (invoice.billFrom && typeof invoice.billFrom === 'object') {
+                document.getElementById('bill-from-name').value = invoice.billFrom.name || '';
+                document.getElementById('bill-from-address').value = invoice.billFrom.address || '';
+                document.getElementById('bill-from-phone').value = invoice.billFrom.phone || '';
+            } else {
+                document.getElementById('bill-from-name').value = invoice.billFrom || '';
+                document.getElementById('bill-from-address').value = '';
+                document.getElementById('bill-from-phone').value = '';
+            }
+
+            if (invoice.billTo && typeof invoice.billTo === 'object') {
+                document.getElementById('bill-to-name').value = invoice.billTo.name || '';
+                document.getElementById('bill-to-address').value = invoice.billTo.address || '';
+                document.getElementById('bill-to-email').value = invoice.billTo.email || '';
+            } else {
+                document.getElementById('bill-to-name').value = invoice.billTo || '';
+                document.getElementById('bill-to-address').value = '';
+                document.getElementById('bill-to-email').value = '';
+            }
+
+            document.getElementById('tax-rate').value = invoice.taxRate;
+            document.getElementById('discount-rate').value = invoice.discountRate;
+
+            const tableBody = document.getElementById('invoice-items-body');
+            tableBody.innerHTML = '';
+
+            invoice.items.forEach(item => {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="text" class="p-2 border border-gray-300 rounded-lg w-full description-input" placeholder="Item Description" value="${item.description}"></td>
+                    <td><input type="number" class="p-2 border border-gray-300 rounded-lg w-20 quantity-input" value="${item.quantity}" min="1"></td>
+                    <td><input type="number" class="p-2 border border-gray-300 rounded-lg w-20 price-input" value="${item.unitPrice}" min="0" step="0.01"></td>
+                    <td class="item-total p-2 text-gray-800 font-medium">ZMW ${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                    <td><button class="bg-red-500 text-white font-semibold py-1 px-2 rounded-lg transition-colors hover:bg-red-600" onclick="deleteItem(this)">×</button></td>
+                `;
+                newRow.querySelector('.quantity-input').addEventListener('input', calculateTotals);
+                newRow.querySelector('.price-input').addEventListener('input', calculateTotals);
+                tableBody.appendChild(newRow);
+            });
+            calculateTotals();
+            showMessage("success", `Invoice "${invoiceNumber}" loaded successfully!`);
+        }
+
+        // Delete an invoice
+        function deleteInvoice(invoiceNumber) {
+            if (confirm(`Are you sure you want to delete invoice "${invoiceNumber}"?`)) {
+                savedInvoices = savedInvoices.filter(inv => inv.invoiceNumber !== invoiceNumber);
+                localStorage.setItem('invoices', JSON.stringify(savedInvoices));
+                loadSavedInvoices();
+                showMessage("success", `Invoice "${invoiceNumber}" deleted successfully!`);
+            }
+        }
+
+        // Saves the current invoice
+        function saveInvoice() {
+            const invoiceNumber = document.getElementById('invoice-number').value;
+            const invoiceDate = document.getElementById('invoice-date').value;
+            const dueDate = document.getElementById('due-date').value;
+            
+            if (!invoiceNumber.trim()) {
+                showMessage("error", "Please enter an invoice number.");
+                return;
+            }
+            
+            if (!invoiceDate) {
+                showMessage("error", "Please enter an invoice date.");
+                return;
+            }
+            
+            const billFrom = {
+                name: document.getElementById('bill-from-name').value,
+                address: document.getElementById('bill-from-address').value,
+                phone: document.getElementById('bill-from-phone').value
+            };
+            const billTo = {
+                name: document.getElementById('bill-to-name').value,
+                address: document.getElementById('bill-to-address').value,
+                email: document.getElementById('bill-to-email').value
+            };
+
+            const taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+            const discountRate = parseFloat(document.getElementById('discount-rate').value) || 0;
+
+            const items = [];
+            const tableBody = document.getElementById('invoice-items-body');
+            for (const row of tableBody.rows) {
+                const description = row.querySelector('.description-input').value;
+                const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                const unitPrice = parseFloat(row.querySelector('.price-input').value) || 0;
+                if (description.trim() || quantity > 0 || unitPrice > 0) {
+                    items.push({ description, quantity, unitPrice });
+                }
+            }
+
+            if (items.length === 0) {
+                showMessage("error", "Please add at least one item to the invoice.");
+                return;
+            }
+
+            const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+            const taxAmount = subtotal * (taxRate / 100);
+            const discountAmount = subtotal * (discountRate / 100);
+            const totalAmount = subtotal + taxAmount - discountAmount;
+
+            const invoiceData = {
+                invoiceNumber,
+                invoiceDate,
+                dueDate,
+                billFrom,
+                billTo,
+                taxRate,
+                discountRate,
+                subtotal: subtotal.toFixed(2),
+                taxAmount: taxAmount.toFixed(2),
+                discountAmount: discountAmount.toFixed(2),
+                totalAmount: totalAmount.toFixed(2),
+                items
+            };
+
+            // Remove existing invoice with same number
+            savedInvoices = savedInvoices.filter(inv => inv.invoiceNumber !== invoiceNumber);
+            
+            // Add new invoice
+            savedInvoices.push(invoiceData);
+            
+            // Save to localStorage
+            localStorage.setItem('invoices', JSON.stringify(savedInvoices));
+            
+            loadSavedInvoices();
+            showMessage("success", "Invoice saved successfully!");
+        }
+
+        // Displays a temporary message to the user
+        function showMessage(type, message) {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = message;
+            messageBox.className = "py-2 px-4 rounded-lg font-semibold w-full text-center " + (type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700');
+            messageBox.classList.remove('hidden');
+
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Calculate totals
+        function calculateTotals() {
+            const tableBody = document.getElementById('invoice-items-body');
+            let subtotal = 0;
+
+            for (const row of tableBody.rows) {
+                const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-input').value) || 0;
+                const total = quantity * price;
+
+                row.querySelector('.item-total').textContent = `ZMW ${total.toFixed(2)}`;
+                subtotal += total;
+            }
+
+            const taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+            const discountRate = parseFloat(document.getElementById('discount-rate').value) || 0;
+
+            const taxAmount = subtotal * (taxRate / 100);
+            const discountAmount = subtotal * (discountRate / 100);
+            const totalAmount = subtotal + taxAmount - discountAmount;
+
+            document.getElementById('subtotal').textContent = `ZMW ${subtotal.toFixed(2)}`;
+            document.getElementById('tax-amount').textContent = `ZMW ${taxAmount.toFixed(2)}`;
+            document.getElementById('discount-amount').textContent = `ZMW ${discountAmount.toFixed(2)}`;
+            document.getElementById('total-amount').textContent = `ZMW ${totalAmount.toFixed(2)}`;
+        }
+
+        // Add new item
+        function addItem() {
+            const tableBody = document.getElementById('invoice-items-body');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td><input type="text" class="p-2 border border-gray-300 rounded-lg w-full description-input" placeholder="Item Description"></td>
+                <td><input type="number" class="p-2 border border-gray-300 rounded-lg w-20 quantity-input" value="1" min="1"></td>
+                <td><input type="number" class="p-2 border border-gray-300 rounded-lg w-20 price-input" value="0.00" min="0" step="0.01"></td>
+                <td class="item-total p-2 text-gray-800 font-medium">ZMW 0.00</td>
+                <td><button class="bg-red-500 text-white font-semibold py-1 px-2 rounded-lg transition-colors hover:bg-red-600" onclick="deleteItem(this)">×</button></td>
+            `;
+
+            newRow.querySelector('.quantity-input').addEventListener('input', calculateTotals);
+            newRow.querySelector('.price-input').addEventListener('input', calculateTotals);
+
+            tableBody.appendChild(newRow);
+            calculateTotals();
+        }
+
+        // Delete item
+        function deleteItem(button) {
+            const row = button.closest('tr');
+            row.remove();
+            calculateTotals();
+        }
+
+        // Clear invoice form
+        function clearInvoice() {
+            if (confirm("Are you sure you want to clear the current invoice? This action cannot be undone.")) {
+                const tableBody = document.getElementById('invoice-items-body');
+                tableBody.innerHTML = '';
+                
+                document.getElementById('invoice-number').value = 'INV-' + String(Date.now()).slice(-6);
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('invoice-date').value = today;
+                document.getElementById('due-date').value = '';
+                document.getElementById('bill-from-name').value = '';
+                document.getElementById('bill-from-address').value = '';
+                document.getElementById('bill-from-phone').value = '';
+                document.getElementById('bill-to-name').value = '';
+                document.getElementById('bill-to-address').value = '';
+                document.getElementById('bill-to-email').value = '';
+                document.getElementById('tax-rate').value = '0';
+                document.getElementById('discount-rate').value = '0';
+
+                addItem();
+                showMessage("success", "Invoice form cleared.");
+            }
+        }
+    </script>
+</body>
+</html>
