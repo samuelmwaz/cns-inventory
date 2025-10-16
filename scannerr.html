@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLE Barcode Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
+        .card { background-color: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .connected { background-color: #10b981; }
+        .disconnected { background-color: #ef4444; }
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        #reader video {
+            width: 100% !important;
+            border-radius: 0.5rem;
+        }
+        #barcode-scanner {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+        #barcode-scanner video {
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+        #barcode-scanner canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .drawingBuffer {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Inventory Scanner</h1>
+            <p class="text-gray-500">Scan barcodes and QR codes to log products.</p>
+        </header>
+
+        <!-- Connection and Status Card -->
+        <div class="card p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Scanner Control</h2>
+            
+            <!-- Camera Scan Section -->
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Camera Scanner</h3>
+            <p class="text-sm text-gray-500 mb-3">Choose scanner type based on your barcode format</p>
+            
+            <!-- Scanner Type Selection -->
+            <div class="mb-4 flex gap-2 flex-wrap">
+                <button id="qr-mode-btn" 
+                        class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition"
+                        onclick="setScannerMode('qr')">
+                    QR Code Scanner
+                </button>
+                <button id="barcode-mode-btn" 
+                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition"
+                        onclick="setScannerMode('barcode')">
+                    Barcode Scanner (UPC/EAN/Code128)
+                </button>
+            </div>
+            
+            <div id="reader-container" class="mb-4">
+                <div id="reader" class="border-2 border-gray-300 rounded-lg overflow-hidden hidden"></div>
+                <div id="barcode-scanner" class="border-2 border-gray-300 rounded-lg overflow-hidden hidden"></div>
+                <p id="scan-status" class="text-center text-sm font-medium mt-2 text-gray-600"></p>
+            </div>
+            
+            <div class="flex gap-2 flex-wrap">
+                <button id="start-camera-button" 
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50"
+                        onclick="startCameraScan()">
+                    Start Camera Scanner
+                </button>
+                <button id="stop-camera-button" 
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 hidden"
+                        onclick="stopCameraScan()">
+                    Stop Camera
+                </button>
+            </div>
+            
+            <hr class="my-6 border-gray-200">
+
+            <!-- Manual Input Section -->
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Manual Entry / Last Scanned</h3>
+            <div class="flex flex-col space-y-3">
+                <label class="text-sm font-medium text-gray-700">Product Code:</label>
+                <input type="text" id="product-code-input" class="p-3 border border-gray-300 rounded-lg shadow-sm font-mono text-gray-800" placeholder="Scan or enter product code...">
+                <label class="text-sm font-medium text-gray-700">Serial Number (optional):</label>
+                <input type="text" id="serial-number-input" class="p-3 border border-gray-300 rounded-lg shadow-sm font-mono text-gray-800" placeholder="Auto-generated if empty">
+                <button id="save-button" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"
+                        onclick="saveProduct()">
+                    Save Product
+                </button>
+            </div>
+
+            <hr class="my-6 border-gray-200">
+            
+            <!-- BLE Scanner Status & Button (Optional) -->
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">External BLE Scanner (Optional)</h3>
+            <div id="status-container" class="flex items-center mb-4 text-lg font-medium">
+                <span id="status-dot" class="status-dot disconnected"></span>
+                <span id="connection-status" class="text-red-500">Disconnected</span>
+            </div>
+            <button id="connect-button" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-blue-300"
+                    onclick="connectScanner()">
+                Connect External BLE Scanner
+            </button>
+        </div>
+
+        <!-- Scanned Products List Card -->
+        <div class="card p-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Scanned Products Log</h2>
+            <div id="loading-indicator" class="text-center py-8 text-gray-500 hidden">Loading data...</div>
+            <div id="product-list-container" class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Code</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial Number</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanned At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list" class="bg-white divide-y divide-gray-200">
+                        <!-- Products will be injected here -->
+                    </tbody>
+                </table>
+                <p id="empty-state" class="text-center py-8 text-gray-500">No products scanned yet.</p>
+            </div>
+        </div>
+        <p id="user-info" class="text-xs text-gray-400 mt-4 text-right"></p>
+    </div>
+
+    <!-- Firebase Imports and Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, setDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId = null;
+        let scannerDevice = null;
+        let html5QrCode = null;
+        let isCameraScanning = false;
+        let scannerMode = 'qr'; // 'qr' or 'barcode'
+        let quaggaInitialized = false;
+
+        setLogLevel('Debug');
+
+        // --- Utility Functions ---
+
+        const updateStatus = (isConnected, deviceName = "") => {
+            const dot = document.getElementById('status-dot');
+            const statusText = document.getElementById('connection-status');
+            const connectButton = document.getElementById('connect-button');
+
+            dot.className = `status-dot ${isConnected ? 'connected' : 'disconnected'}`;
+            statusText.textContent = isConnected ? `BLE Scanner: Connected to ${deviceName}` : 'BLE Scanner: Disconnected';
+            statusText.className = isConnected ? 'text-green-500' : 'text-red-500';
+            connectButton.disabled = isConnected;
+            connectButton.textContent = isConnected ? 'Scanner Connected' : 'Connect External BLE Scanner';
+        };
+
+        const showScanStatus = (message, isError = false) => {
+            const statusEl = document.getElementById('scan-status');
+            statusEl.textContent = message;
+            statusEl.className = `text-center text-sm font-medium mt-2 ${isError ? 'text-red-600' : 'text-green-600'}`;
+        };
+
+        // --- Firestore Data Functions ---
+        
+        const getProductsCollectionRef = () => {
+            if (!db || !userId) {
+                console.error("Firestore or User ID not ready.");
+                return null;
+            }
+            return collection(db, `artifacts/${appId}/users/${userId}/scanned_products`);
+        };
+
+        window.saveProduct = async () => {
+            const productCode = document.getElementById('product-code-input').value.trim();
+            let serialNumber = document.getElementById('serial-number-input').value.trim();
+            
+            if (!productCode) {
+                showScanStatus('Please enter a product code', true);
+                return;
+            }
+
+            if (!serialNumber) {
+                serialNumber = 'SN-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            }
+
+            const collectionRef = getProductsCollectionRef();
+            if (!collectionRef) {
+                showScanStatus('Database not ready', true);
+                return;
+            }
+
+            const newDocRef = doc(collectionRef);
+            
+            const productData = {
+                code: productCode,
+                serial: serialNumber,
+                timestamp: Timestamp.now(),
+                userId: userId,
+            };
+
+            try {
+                await setDoc(newDocRef, productData);
+                console.log("Product saved successfully:", productData);
+                showScanStatus('Product saved successfully!');
+                document.getElementById('product-code-input').value = '';
+                document.getElementById('serial-number-input').value = '';
+            } catch (error) {
+                console.error("Error saving product:", error);
+                showScanStatus('Error saving product', true);
+            }
+        };
+
+        const setupProductListener = () => {
+            const collectionRef = getProductsCollectionRef();
+            if (!collectionRef) return;
+
+            const q = query(collectionRef, orderBy("timestamp", "desc"));
+            const productListElement = document.getElementById('product-list');
+            const emptyStateElement = document.getElementById('empty-state');
+            const loadingIndicator = document.getElementById('loading-indicator');
+
+            loadingIndicator.classList.remove('hidden');
+
+            onSnapshot(q, (snapshot) => {
+                productListElement.innerHTML = '';
+                let hasProducts = false;
+                
+                snapshot.forEach((doc) => {
+                    hasProducts = true;
+                    const data = doc.data();
+                    const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'N/A';
+                    
+                    const row = `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.code || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${data.serial || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+                        </tr>
+                    `;
+                    productListElement.innerHTML += row;
+                });
+                
+                loadingIndicator.classList.add('hidden');
+                emptyStateElement.classList.toggle('hidden', hasProducts);
+            }, (error) => {
+                console.error("Error setting up snapshot listener:", error);
+                loadingIndicator.classList.add('hidden');
+            });
+        };
+        
+        // --- Firebase Initialization and Authentication ---
+
+        const initFirebase = async () => {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        document.getElementById('user-info').textContent = `User ID: ${userId}`;
+                        setupProductListener();
+                    } else {
+                        console.error("No user signed in.");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase or authentication:", error);
+            }
+        };
+
+        // --- Camera Barcode Scanning Functions ---
+
+        window.setScannerMode = (mode) => {
+            if (isCameraScanning) {
+                showScanStatus('Please stop current scanner first', true);
+                return;
+            }
+            scannerMode = mode;
+            
+            const qrBtn = document.getElementById('qr-mode-btn');
+            const barcodeBtn = document.getElementById('barcode-mode-btn');
+            
+            if (mode === 'qr') {
+                qrBtn.classList.add('ring-4', 'ring-purple-300');
+                barcodeBtn.classList.remove('ring-4', 'ring-orange-300');
+                showScanStatus('QR Code mode selected');
+            } else {
+                barcodeBtn.classList.add('ring-4', 'ring-orange-300');
+                qrBtn.classList.remove('ring-4', 'ring-purple-300');
+                showScanStatus('Barcode mode selected (UPC, EAN, Code128)');
+            }
+        };
+
+        window.startCameraScan = async () => {
+            const startBtn = document.getElementById('start-camera-button');
+            const stopBtn = document.getElementById('stop-camera-button');
+
+            if (isCameraScanning) {
+                showScanStatus('Scanner already running', true);
+                return;
+            }
+
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+            isCameraScanning = true;
+
+            if (scannerMode === 'qr') {
+                await startQRScanner();
+            } else {
+                await startBarcodeScanner();
+            }
+        };
+
+        const startQRScanner = async () => {
+            const readerEl = document.getElementById('reader');
+
+            try {
+                readerEl.classList.remove('hidden');
+                
+                html5QrCode = new Html5Qrcode("reader");
+                
+                const config = { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                };
+
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText, decodedResult) => {
+                        console.log(`QR Scan successful: ${decodedText}`);
+                        document.getElementById('product-code-input').value = decodedText;
+                        showScanStatus(`✓ Scanned: ${decodedText}`);
+                    },
+                    (errorMessage) => {
+                        // Scanning errors are normal, ignore them
+                    }
+                );
+
+                showScanStatus('QR Scanner active - point at QR code');
+
+            } catch (error) {
+                console.error("Error starting QR scanner:", error);
+                showScanStatus('Error starting QR scanner: ' + error, true);
+                readerEl.classList.add('hidden');
+                resetScanButtons();
+            }
+        };
+
+        const startBarcodeScanner = async () => {
+            const scannerEl = document.getElementById('barcode-scanner');
+
+            try {
+                scannerEl.classList.remove('hidden');
+
+                await Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: scannerEl,
+                        constraints: {
+                            facingMode: "environment"
+                        }
+                    },
+                    decoder: {
+                        readers: [
+                            "code_128_reader",
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_39_reader",
+                            "code_39_vin_reader",
+                            "codabar_reader",
+                            "upc_reader",
+                            "upc_e_reader",
+                            "i2of5_reader"
+                        ]
+                    },
+                    locate: true,
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 4,
+                    frequency: 10
+                }, (err) => {
+                    if (err) {
+                        console.error("Quagga init error:", err);
+                        showScanStatus('Error starting barcode scanner: ' + err, true);
+                        scannerEl.classList.add('hidden');
+                        resetScanButtons();
+                        return;
+                    }
+                    
+                    Quagga.start();
+                    quaggaInitialized = true;
+                    showScanStatus('Barcode scanner active - point at barcode');
+                });
+
+                Quagga.onDetected((result) => {
+                    const code = result.codeResult.code;
+                    console.log(`Barcode detected: ${code}`);
+                    document.getElementById('product-code-input').value = code;
+                    showScanStatus(`✓ Scanned barcode: ${code}`);
+                    
+                    // Optional: Vibrate on successful scan (if supported)
+                    if (navigator.vibrate) {
+                        navigator.vibrate(200);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error starting barcode scanner:", error);
+                showScanStatus('Error starting barcode scanner: ' + error, true);
+                scannerEl.classList.add('hidden');
+                resetScanButtons();
+            }
+        };
+
+        const resetScanButtons = () => {
+            const startBtn = document.getElementById('start-camera-button');
+            const stopBtn = document.getElementById('stop-camera-button');
+            startBtn.classList.remove('hidden');
+            stopBtn.classList.add('hidden');
+            isCameraScanning = false;
+        };
+
+        window.stopCameraScan = async () => {
+            if (!isCameraScanning) {
+                return;
+            }
+
+            if (scannerMode === 'qr' && html5QrCode) {
+                await stopQRScanner();
+            } else if (scannerMode === 'barcode' && quaggaInitialized) {
+                await stopBarcodeScanner();
+            }
+
+            resetScanButtons();
+            showScanStatus('Scanner stopped');
+        };
+
+        const stopQRScanner = async () => {
+            const readerEl = document.getElementById('reader');
+            
+            try {
+                await html5QrCode.stop();
+                html5QrCode.clear();
+                html5QrCode = null;
+                readerEl.classList.add('hidden');
+            } catch (error) {
+                console.error("Error stopping QR scanner:", error);
+                readerEl.classList.add('hidden');
+            }
+        };
+
+        const stopBarcodeScanner = async () => {
+            const scannerEl = document.getElementById('barcode-scanner');
+            
+            try {
+                Quagga.stop();
+                Quagga.offDetected();
+                quaggaInitialized = false;
+                scannerEl.classList.add('hidden');
+            } catch (error) {
+                console.error("Error stopping barcode scanner:", error);
+                scannerEl.classList.add('hidden');
+            }
+        };
+
+        // --- Web Bluetooth API Functions ---
+
+        const BARCODE_SERVICE_UUID = '00001234-0000-1000-8000-00805f9b34fb'; 
+        const PRODUCT_CODE_CHAR_UUID = '00005678-0000-1000-8000-00805f9b34fb';
+
+        const handleCharacteristicChange = (event) => {
+            const value = event.target.value; 
+            const decoder = new TextDecoder('utf-8');
+            const dataString = decoder.decode(value.buffer);
+            
+            console.log(`Received data from BLE: ${dataString}`);
+
+            if (event.target.uuid === PRODUCT_CODE_CHAR_UUID) {
+                const productCode = dataString.trim();
+                if (productCode) {
+                    document.getElementById('product-code-input').value = productCode;
+                    showScanStatus(`BLE Scanner: ${productCode}`);
+                }
+            }
+        };
+
+        window.connectScanner = async () => {
+            if (!('bluetooth' in navigator)) {
+                showScanStatus("Web Bluetooth not supported in this browser", true);
+                return;
+            }
+
+            try {
+                updateStatus(false, "Connecting...");
+
+                scannerDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [BARCODE_SERVICE_UUID] }]
+                });
+                
+                updateStatus(true, scannerDevice.name);
+                scannerDevice.addEventListener('gattserverdisconnected', () => {
+                    updateStatus(false);
+                });
+
+                const server = await scannerDevice.gatt.connect();
+                const service = await server.getPrimaryService(BARCODE_SERVICE_UUID);
+                const productCodeCharacteristic = await service.getCharacteristic(PRODUCT_CODE_CHAR_UUID);
+                
+                await productCodeCharacteristic.startNotifications();
+                productCodeCharacteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+
+            } catch (error) {
+                updateStatus(false);
+                console.error("Bluetooth connection error:", error);
+                showScanStatus(`BLE Error: ${error.message}`, true);
+            }
+        };
+
+        // Initialize Firebase on window load
+        window.onload = initFirebase;
+    </script>
+</body>
+</html>
