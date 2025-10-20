@@ -79,12 +79,15 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto">
+        <!-- Header -->
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-2">Serial Number Capture</h1>
             <p class="text-purple-100 text-lg">Capture and save serial numbers with timestamps</p>
         </header>
 
+        <!-- Main Card -->
         <div class="card p-6 md:p-8 mb-6">
+            <!-- Scan Button (Initial State) -->
             <div id="initial-view">
                 <div class="text-center mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-purple-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -96,10 +99,11 @@
                 </div>
                 <button onclick="startCamera()" 
                         class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-300 transform hover:scale-105 shadow-lg text-lg">
-                    &#x1F4F8; Scan Serial Number
+                    📷 Scan Serial Number
                 </button>
             </div>
 
+            <!-- Camera View -->
             <div id="camera-view" class="hidden">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Position Serial Number</h2>
                 <p class="text-gray-600 mb-4 text-center">Click the white button to capture</p>
@@ -118,6 +122,7 @@
                 </div>
             </div>
 
+            <!-- Captured Image View -->
             <div id="capture-view" class="hidden">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Captured Image</h2>
                 
@@ -125,28 +130,30 @@
                     <img id="captured-image" alt="Captured serial number">
                 </div>
 
-                <div id="processing-message" class="mb-4 p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-center font-semibold flex items-center justify-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span id="processing-text">Processing image... (Simulated OCR)</span>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Serial Number:</label>
+                    <input type="text" id="serial-input" 
+                           class="w-full p-3 border-2 border-gray-300 rounded-lg font-mono text-lg focus:border-purple-500 focus:outline-none" 
+                           placeholder="Enter serial number from image...">
                 </div>
+
                 <div class="flex gap-2">
                     <button onclick="retakePhoto()" 
                             class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition">
                         Retake
                     </button>
-                    <button id="save-button" onclick="saveSerial()" 
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition hidden">
-                        Retry Save
+                    <button onclick="saveSerial()" 
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">
+                        Save Serial Number
                     </button>
                 </div>
             </div>
 
+            <!-- Status Messages -->
             <div id="status-message" class="mt-4 p-3 rounded-lg text-center font-medium hidden"></div>
         </div>
 
+        <!-- Saved Serials List -->
         <div class="card p-6 md:p-8">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Saved Serial Numbers</h2>
@@ -155,28 +162,31 @@
                 </span>
             </div>
 
+            <!-- Export Buttons -->
             <div class="flex gap-2 mb-6 flex-wrap">
                 <button onclick="exportToCSV()" 
                         class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
-                    &#x1F4C3; Export CSV
+                    📥 Export CSV
                 </button>
                 <button onclick="exportToJSON()" 
                         class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
-                    &#x1F4BE; Export JSON
+                    📥 Export JSON
                 </button>
                 <button onclick="clearAllSerials()" 
                         class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
-                    &#x1F5D1; Clear All
+                    🗑️ Clear All
                 </button>
             </div>
 
+            <!-- Search Bar -->
             <div class="mb-4">
                 <input type="text" id="search-input" 
                        onkeyup="searchSerials()" 
                        class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none" 
-                       placeholder="&#x1F50D; Search serial numbers...">
+                       placeholder="🔍 Search serial numbers...">
             </div>
 
+            <!-- Serials Table -->
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
@@ -188,7 +198,8 @@
                         </tr>
                     </thead>
                     <tbody id="serials-list" class="divide-y divide-gray-200">
-                        </tbody>
+                        <!-- Serial numbers will be inserted here -->
+                    </tbody>
                 </table>
             </div>
 
@@ -265,7 +276,7 @@
             video.srcObject = null;
         }
 
-        // Capture image and initiate the automated processing
+        // Capture image
         function captureImage() {
             const video = document.getElementById('camera-feed');
             const canvas = document.getElementById('canvas');
@@ -293,119 +304,62 @@
             document.getElementById('camera-view').classList.add('hidden');
             document.getElementById('capture-view').classList.remove('hidden');
             
-            // Prepare for processing state
-            document.getElementById('processing-message').classList.remove('hidden');
-            document.getElementById('processing-text').textContent = 'Analyzing image...';
-            document.getElementById('save-button').classList.add('hidden');
-
-            showStatus('Image captured! Processing serial number...', 'info');
+            // Focus on serial input
+            document.getElementById('serial-input').focus();
+            
+            showStatus('Image captured! Enter the serial number and save.', 'success');
             
             // Vibrate if supported
             if (navigator.vibrate) {
                 navigator.vibrate(200);
-            }
-
-            // Automatically proceed to OCR and saving
-            processAndSaveSerial(imageData); 
-        }
-
-        // NEW: Placeholder for actual OCR function (simulated)
-        async function performOCR(imageData) {
-            // This is a SIMULATION. Real implementation requires a library (like Tesseract.js) or a cloud API.
-            
-            // Simulate network/processing delay
-            await new Promise(resolve => setTimeout(resolve, 2000)); 
-
-            // Simulate a detected serial number
-            const simulatedSerial = `SN-${Date.now().toString().slice(-8)}`;
-            
-            // 1 in 8 chance of an OCR failure simulation
-            if (Math.random() < 0.125) {
-                throw new Error('OCR failed to detect a clear serial number. Try zooming in.');
-            }
-            
-            return simulatedSerial;
-        }
-
-        // NEW: Function to handle OCR and saving
-        async function processAndSaveSerial(imageData) {
-            const saveButton = document.getElementById('save-button');
-            const processingMessage = document.getElementById('processing-message');
-            const processingText = document.getElementById('processing-text');
-            
-            // Reset message styles
-            processingMessage.classList.add('bg-yellow-100', 'border-yellow-300', 'text-yellow-800');
-            processingMessage.classList.remove('bg-red-100', 'border-red-300', 'text-red-800');
-            saveButton.classList.add('hidden'); // Hide retry button during auto-process
-
-            try {
-                const serialNumber = await performOCR(imageData);
-
-                // Create serial entry
-                const entry = {
-                    id: Date.now(),
-                    serial: serialNumber,
-                    date: new Date().toISOString(),
-                    image: imageData
-                };
-
-                // Add to array
-                serialNumbers.unshift(entry); // Add to beginning
-                
-                // Save to storage
-                saveToStorage();
-
-                // Update display
-                displaySerials();
-
-                // Reset view
-                document.getElementById('capture-view').classList.add('hidden');
-                document.getElementById('initial-view').classList.remove('hidden');
-
-                showStatus(`Serial number **${serialNumber}** saved successfully!`, 'success');
-                
-                // Vibrate if supported
-                if (navigator.vibrate) {
-                    navigator.vibrate([100, 50, 100]);
-                }
-
-            } catch (error) {
-                console.error('OCR/Save Error:', error);
-                
-                // Show error state
-                processingMessage.classList.remove('bg-yellow-100', 'border-yellow-300', 'text-yellow-800');
-                processingMessage.classList.add('bg-red-100', 'border-red-300', 'text-red-800');
-                processingText.innerHTML = `⚠️ Error: ${error.message} Please **Retake** or **Retry**.`;
-                showStatus('Processing failed. Please retake the photo.', 'error');
-                
-                // Show the retry button
-                saveButton.classList.remove('hidden');
-                saveButton.onclick = () => processAndSaveSerial(imageData); // Re-set onclick for retry
-                
-                return; // Stop here on error
-            } finally {
-                // Hide processing message for success path, or keep visible for error path
-                if (document.getElementById('initial-view').classList.contains('hidden')) {
-                     // Still in capture view (must be an error)
-                } else {
-                     // Success, go back to initial view, so hide the message
-                     processingMessage.classList.add('hidden');
-                }
-               
-                processingText.textContent = 'Processing image... (Simulated OCR)';
             }
         }
 
         // Retake photo
         function retakePhoto() {
             document.getElementById('capture-view').classList.add('hidden');
+            document.getElementById('serial-input').value = '';
             startCamera();
         }
 
-        // saveSerial function is now a manual retry mechanism
+        // Save serial number
         function saveSerial() {
-            const image = document.getElementById('captured-image').src;
-            processAndSaveSerial(image);
+            const serialInput = document.getElementById('serial-input');
+            const serialNumber = serialInput.value.trim();
+
+            if (!serialNumber) {
+                showStatus('Please enter a serial number', 'error');
+                return;
+            }
+
+            // Create serial entry
+            const entry = {
+                id: Date.now(),
+                serial: serialNumber,
+                date: new Date().toISOString(),
+                image: document.getElementById('captured-image').src
+            };
+
+            // Add to array
+            serialNumbers.unshift(entry); // Add to beginning
+            
+            // Save to storage
+            saveToStorage();
+
+            // Update display
+            displaySerials();
+
+            // Reset view
+            document.getElementById('capture-view').classList.add('hidden');
+            document.getElementById('initial-view').classList.remove('hidden');
+            serialInput.value = '';
+
+            showStatus('Serial number saved successfully!', 'success');
+            
+            // Vibrate if supported
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
         }
 
         // Display serials in table
@@ -561,7 +515,7 @@
         // Show status message
         function showStatus(message, type = 'info') {
             const statusEl = document.getElementById('status-message');
-            statusEl.innerHTML = message;
+            statusEl.textContent = message;
             statusEl.classList.remove('hidden', 'bg-blue-100', 'text-blue-700', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
             
             if (type === 'success') {
