@@ -184,16 +184,19 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let db, auth, userId = null;
+        
+        // --- Global Variables (Updated to match user's request) ---
         let scannerDevice = null;
         let html5QrCode = null;
         let isCameraScanning = false;
         let scannerMode = 'qr'; // 'qr' or 'barcode'
         let quaggaInitialized = false;
+        let serialScanner = null; 
+        let isScanningSerial = false; // Renamed from isAwaitingSerialCapture
         let batchMode = false;
         let batchScans = []; // Store scans locally
-        
-        // NEW STATE: Flag for the dedicated serial logging feature
-        let isAwaitingSerialCapture = false;
+        // Omitting LOCAL_STORAGE_KEY as all persistent data must be saved to Firestore
+        // ------------------------------------------------------------
 
         setLogLevel('Debug');
         
@@ -223,13 +226,14 @@
             if (!scannedText) return;
 
             // 1. Dedicated Serial Log Capture Mode
-            if (isAwaitingSerialCapture) {
+            if (isScanningSerial) { // Using the new variable name
                 document.getElementById('scanned-serial-log-input').value = scannedText;
                 document.getElementById('save-serial-log-btn').disabled = false;
                 showScanStatus(`Serial Scanned: ${scannedText}. Press SAVE to log entry.`, false);
+                
                 // Automatically stop the camera after a single capture
                 window.stopCameraScan();
-                isAwaitingSerialCapture = true; // Keep true so we know which save function to use
+                isScanningSerial = true; // Keep true so we know which save function to use
                 
             } else {
                 // 2. Default Inventory Mode (Scan goes to Product Code input)
@@ -293,7 +297,7 @@
             }
         };
 
-        // NEW: Function to save only the serial number as a log entry
+        // Function to save only the serial number as a log entry
         window.saveSerialLog = async () => {
             const serialNumber = document.getElementById('scanned-serial-log-input').value.trim();
             
@@ -404,9 +408,9 @@
 
         // --- Camera Scanning Functions ---
         
-        // NEW FUNCTION: Dedicated entry point for serial capture
+        // Dedicated entry point for serial capture
         window.startSerialCapture = () => {
-            isAwaitingSerialCapture = true;
+            isScanningSerial = true; // Using the new variable name
             document.getElementById('serial-log-display').classList.remove('hidden');
             document.getElementById('scanned-serial-log-input').value = 'Scanning...';
             document.getElementById('save-serial-log-btn').disabled = true;
@@ -567,7 +571,7 @@
 
             stopBtn.classList.add('hidden');
             isCameraScanning = false;
-            isAwaitingSerialCapture = false; // Important: reset serial capture mode
+            isScanningSerial = false; // Using the new variable name
         };
 
         window.stopCameraScan = async () => {
@@ -581,10 +585,13 @@
                 await stopBarcodeScanner();
             }
 
+            // Capture the state before resetting the buttons
+            const wasScanningSerial = isScanningSerial; 
+            
             resetScanButtons();
             
             // If we were in serial capture mode, prompt the user for the next action
-            if (isAwaitingSerialCapture) {
+            if (wasScanningSerial) {
                 showScanStatus('Scan captured. Press SAVE to log or SCAN SERIAL NUMBER again.', false);
             } else {
                 showScanStatus('Scanner stopped');
