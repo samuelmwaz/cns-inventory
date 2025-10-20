@@ -1,688 +1,541 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLE Barcode Inventory System</title>
+    <title>Serial Number Capture</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://unpkg.com/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
-    <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
-        .card { background-color: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .connected { background-color: #10b981; }
-        .disconnected { background-color: #ef4444; }
-        #reader {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        #reader video {
-            width: 100% !important;
-            border-radius: 0.5rem;
+        .card { 
+            background-color: white; 
+            border-radius: 1rem; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
         }
-        #barcode-scanner {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
+        #video-container {
             position: relative;
-        }
-        #barcode-scanner video {
             width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #000;
+        }
+        #camera-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #canvas {
+            display: none;
+        }
+        .capture-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .capture-btn:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+        .capture-btn:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+        #captured-image {
+            max-width: 100%;
             border-radius: 0.5rem;
+            margin: 0 auto;
+            display: block;
         }
-        #barcode-scanner canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .serial-item {
+            animation: slideIn 0.3s ease-out;
         }
-        .drawingBuffer {
-            position: absolute;
-            top: 0;
-            left: 0;
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
+  <a href="first.html" class="nav-link" id="link-stock"> main menu</a>
+<body class="p-4 md:p-8">
 
-    <div id="app" class="max-w-4xl mx-auto">
-        <header class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Inventory Scanner</h1>
-            <p class="text-gray-500">Scan barcodes and QR codes to log products.</p>
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-2">Serial Number Capture</h1>
+            <p class="text-purple-100 text-lg">Capture and save serial numbers with timestamps</p>
         </header>
 
-        <!-- Connection and Status Card -->
-        <div class="card p-6 mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Scanner Control</h2>
-            
-            <!-- Camera Scan Section -->
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Camera Scanner</h3>
-            <p class="text-sm text-gray-500 mb-3">Choose scanner type based on your barcode format</p>
-            
-            <!-- Scanner Type Selection -->
-            <div class="mb-4 flex gap-2 flex-wrap">
-                <button id="qr-mode-btn" 
-                        class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition"
-                        onclick="setScannerMode('qr')">
-                    QR Code Scanner
-                </button>
-                <button id="barcode-mode-btn" 
-                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition"
-                        onclick="setScannerMode('barcode')">
-                    Barcode Scanner (UPC/EAN/Code128)
-                </button>
-            </div>
-            
-            <div id="reader-container" class="mb-4">
-                <div id="reader" class="border-2 border-gray-300 rounded-lg overflow-hidden hidden"></div>
-                <div id="barcode-scanner" class="border-2 border-gray-300 rounded-lg overflow-hidden hidden"></div>
-                <p id="scan-status" class="text-center text-sm font-medium mt-2 text-gray-600"></p>
-            </div>
-            
-            <div class="flex gap-2 flex-wrap mb-6">
-                <button id="start-camera-button" 
-                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50"
-                        onclick="startCameraScan('inventory')">
-                    Start Inventory Scan
-                </button>
-                <button id="stop-camera-button" 
-                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 hidden"
-                        onclick="stopCameraScan()">
-                    Stop Camera
-                </button>
-            </div>
-            
-            <hr class="my-6 border-gray-200">
-
-            <!-- INVENTORY PRODUCT ENTRY (Original Flow) -->
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Inventory Product Entry (Full Item)</h3>
-            <div id="inventory-mode-controls" class="flex flex-col space-y-3 mb-6 p-4 border border-gray-200 rounded-lg">
-                <label class="text-sm font-medium text-gray-700">Product Code:</label>
-                <input type="text" id="product-code-input" class="p-3 border border-gray-300 rounded-lg shadow-sm font-mono text-gray-800" placeholder="Scan or enter product code...">
-                <label class="text-sm font-medium text-gray-700">Serial Number (optional):</label>
-                <input type="text" id="serial-number-input" class="p-3 border border-gray-300 rounded-lg shadow-sm font-mono text-gray-800" placeholder="Auto-generated if empty">
-                <button id="save-button" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"
-                        onclick="saveProduct()">
-                    Save Full Inventory Item
+        <!-- Main Card -->
+        <div class="card p-6 md:p-8 mb-6">
+            <!-- Scan Button (Initial State) -->
+            <div id="initial-view">
+                <div class="text-center mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-purple-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Ready to Scan</h2>
+                    <p class="text-gray-600 mb-6">Click the button below to start capturing serial numbers</p>
+                </div>
+                <button onclick="startCamera()" 
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-300 transform hover:scale-105 shadow-lg text-lg">
+                    📷 Scan Serial Number
                 </button>
             </div>
 
-            <hr class="my-6 border-gray-200">
+            <!-- Camera View -->
+            <div id="camera-view" class="hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Position Serial Number</h2>
+                <p class="text-gray-600 mb-4 text-center">Click the white button to capture</p>
+                
+                <div id="video-container">
+                    <video id="camera-feed" autoplay playsinline></video>
+                    <button onclick="captureImage()" class="capture-btn" title="Capture"></button>
+                </div>
+                <canvas id="canvas"></canvas>
 
-            <!-- NEW DEDICATED SERIAL LOGGING FEATURE -->
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Dedicated Serial Number Logging</h3>
-            <div class="flex flex-col space-y-3">
-                <button id="start-serial-scan-btn" 
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50"
-                        onclick="startSerialCapture()">
-                    Scan Serial Number
-                </button>
-                <div id="serial-log-display" class="hidden flex-col space-y-3 p-4 border border-blue-200 rounded-lg bg-blue-50">
-                    <label class="text-sm font-medium text-gray-700">Scanned Serial:</label>
-                    <input type="text" id="scanned-serial-log-input" class="p-3 border border-blue-300 rounded-lg shadow-sm font-mono text-gray-800 bg-white" placeholder="Waiting for scan..." readonly>
-                    <button id="save-serial-log-btn" 
-                            class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition disabled:bg-emerald-400"
-                            onclick="saveSerialLog()" disabled>
-                        Save Scanned Serial (As Log Entry)
+                <div class="mt-4 flex gap-2">
+                    <button onclick="stopCamera()" 
+                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition">
+                        Cancel
                     </button>
                 </div>
             </div>
 
-            <hr class="my-6 border-gray-200">
-            
-            <!-- BLE Scanner Status & Button (Optional) -->
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">External BLE Scanner (Optional)</h3>
-            <div id="status-container" class="flex items-center mb-4 text-lg font-medium">
-                <span id="status-dot" class="status-dot disconnected"></span>
-                <span id="connection-status" class="text-red-500">Disconnected</span>
+            <!-- Captured Image View -->
+            <div id="capture-view" class="hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Captured Image</h2>
+                
+                <div class="mb-4 border-2 border-gray-300 rounded-lg p-2">
+                    <img id="captured-image" alt="Captured serial number">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Serial Number:</label>
+                    <input type="text" id="serial-input" 
+                           class="w-full p-3 border-2 border-gray-300 rounded-lg font-mono text-lg focus:border-purple-500 focus:outline-none" 
+                           placeholder="Enter serial number from image...">
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="retakePhoto()" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition">
+                        Retake
+                    </button>
+                    <button onclick="saveSerial()" 
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">
+                        Save Serial Number
+                    </button>
+                </div>
             </div>
-            <button id="connect-button" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-blue-300"
-                    onclick="connectScanner()">
-                Connect External BLE Scanner
-            </button>
+
+            <!-- Status Messages -->
+            <div id="status-message" class="mt-4 p-3 rounded-lg text-center font-medium hidden"></div>
         </div>
 
-        <!-- Scanned Products List Card -->
-        <div class="card p-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Scanned Products Log</h2>
-            <div id="loading-indicator" class="text-center py-8 text-gray-500 hidden">Loading data...</div>
-            <div id="product-list-container" class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+        <!-- Saved Serials List -->
+        <div class="card p-6 md:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Saved Serial Numbers</h2>
+                <span class="bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm">
+                    Total: <span id="total-count">0</span>
+                </span>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button onclick="exportToCSV()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                    📥 Export CSV
+                </button>
+                <button onclick="exportToJSON()" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                    📥 Export JSON
+                </button>
+                <button onclick="clearAllSerials()" 
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                    🗑️ Clear All
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="mb-4">
+                <input type="text" id="search-input" 
+                       onkeyup="searchSerials()" 
+                       class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none" 
+                       placeholder="🔍 Search serial numbers...">
+            </div>
+
+            <!-- Serials Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Code</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial Number</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanned At</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider rounded-tl-lg">#</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Serial Number</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Date & Time</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider rounded-tr-lg">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="product-list" class="bg-white divide-y divide-gray-200">
-                        <!-- Products will be injected here -->
+                    <tbody id="serials-list" class="divide-y divide-gray-200">
+                        <!-- Serial numbers will be inserted here -->
                     </tbody>
                 </table>
-                <p id="empty-state" class="text-center py-8 text-gray-500">No products scanned yet.</p>
             </div>
+
+            <p id="empty-state" class="text-center py-12 text-gray-500 text-lg">
+                No serial numbers saved yet. Start scanning to add entries.
+            </p>
         </div>
-        <p id="user-info" class="text-xs text-gray-400 mt-4 text-right"></p>
     </div>
 
-    <!-- Firebase Imports and Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot, setDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    <script>
+        // State variables
+        let stream = null;
+        let serialNumbers = [];
+        const STORAGE_KEY = 'serial_numbers_data';
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth, userId = null;
-        
-        // --- Global Variables (Updated to match user's request) ---
-        let scannerDevice = null;
-        let html5QrCode = null;
-        let isCameraScanning = false;
-        let scannerMode = 'qr'; // 'qr' or 'barcode'
-        let quaggaInitialized = false;
-        let serialScanner = null; 
-        let isScanningSerial = false; // Renamed from isAwaitingSerialCapture
-        let batchMode = false;
-        let batchScans = []; // Store scans locally
-        // Omitting LOCAL_STORAGE_KEY as all persistent data must be saved to Firestore
-        // ------------------------------------------------------------
-
-        setLogLevel('Debug');
-        
-        // --- Utility Functions ---
-
-        const updateStatus = (isConnected, deviceName = "") => {
-            const dot = document.getElementById('status-dot');
-            const statusText = document.getElementById('connection-status');
-            const connectButton = document.getElementById('connect-button');
-
-            dot.className = `status-dot ${isConnected ? 'connected' : 'disconnected'}`;
-            statusText.textContent = isConnected ? `BLE Scanner: Connected to ${deviceName}` : 'BLE Scanner: Disconnected';
-            statusText.className = isConnected ? 'text-green-500' : 'text-red-500';
-            connectButton.disabled = isConnected;
-            connectButton.textContent = isConnected ? 'Scanner Connected' : 'Connect External BLE Scanner';
+        // Load saved serials on page load
+        window.onload = () => {
+            loadSerials();
+            displaySerials();
         };
 
-        const showScanStatus = (message, isError = false) => {
-            const statusEl = document.getElementById('scan-status');
-            statusEl.textContent = message;
-            statusEl.className = `text-center text-sm font-medium mt-2 ${isError ? 'text-red-600' : 'text-gray-600'}`;
-        };
+        // Load serials from localStorage
+        function loadSerials() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    serialNumbers = JSON.parse(stored);
+                } catch (e) {
+                    console.error('Error loading serials:', e);
+                    serialNumbers = [];
+                }
+            }
+        }
 
-        // --- Core Scan Result Handler ---
+        // Save serials to localStorage
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(serialNumbers));
+        }
 
-        const handleScanResult = (scannedText) => {
-            if (!scannedText) return;
-
-            // 1. Dedicated Serial Log Capture Mode
-            if (isScanningSerial) { // Using the new variable name
-                document.getElementById('scanned-serial-log-input').value = scannedText;
-                document.getElementById('save-serial-log-btn').disabled = false;
-                showScanStatus(`Serial Scanned: ${scannedText}. Press SAVE to log entry.`, false);
+        // Start camera
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                });
                 
-                // Automatically stop the camera after a single capture
-                window.stopCameraScan();
-                isScanningSerial = true; // Keep true so we know which save function to use
+                const video = document.getElementById('camera-feed');
+                video.srcObject = stream;
+
+                document.getElementById('initial-view').classList.add('hidden');
+                document.getElementById('camera-view').classList.remove('hidden');
                 
-            } else {
-                // 2. Default Inventory Mode (Scan goes to Product Code input)
-                document.getElementById('product-code-input').value = scannedText;
-                showScanStatus(`✓ Product Code Scanned: ${scannedText}. Serial input is now ready.`, false);
+                showStatus('Camera ready! Position the serial number and click capture.', 'info');
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                showStatus('Could not access camera. Please check permissions.', 'error');
+            }
+        }
+
+        // Stop camera
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            document.getElementById('camera-view').classList.add('hidden');
+            document.getElementById('capture-view').classList.add('hidden');
+            document.getElementById('initial-view').classList.remove('hidden');
+            
+            // Clear the video
+            const video = document.getElementById('camera-feed');
+            video.srcObject = null;
+        }
+
+        // Capture image
+        function captureImage() {
+            const video = document.getElementById('camera-feed');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get image data
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Display captured image
+            document.getElementById('captured-image').src = imageData;
+
+            // Stop camera and show capture view
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
             }
 
-            // Optional: Vibrate on successful scan (if supported)
+            document.getElementById('camera-view').classList.add('hidden');
+            document.getElementById('capture-view').classList.remove('hidden');
+            
+            // Focus on serial input
+            document.getElementById('serial-input').focus();
+            
+            showStatus('Image captured! Enter the serial number and save.', 'success');
+            
+            // Vibrate if supported
             if (navigator.vibrate) {
                 navigator.vibrate(200);
             }
-        };
+        }
 
-        // --- Firestore Data Functions ---
-        
-        const getProductsCollectionRef = () => {
-            if (!db || !userId) {
-                console.error("Firestore or User ID not ready.");
-                return null;
-            }
-            return collection(db, `artifacts/${appId}/users/${userId}/scanned_products`);
-        };
+        // Retake photo
+        function retakePhoto() {
+            document.getElementById('capture-view').classList.add('hidden');
+            document.getElementById('serial-input').value = '';
+            startCamera();
+        }
 
-        window.saveProduct = async () => {
-            const productCode = document.getElementById('product-code-input').value.trim();
-            let serialNumber = document.getElementById('serial-number-input').value.trim();
-            
-            if (!productCode) {
-                showScanStatus('Please enter a product code for the full inventory item.', true);
-                return;
-            }
+        // Save serial number
+        function saveSerial() {
+            const serialInput = document.getElementById('serial-input');
+            const serialNumber = serialInput.value.trim();
 
             if (!serialNumber) {
-                serialNumber = 'SN-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-            }
-
-            const collectionRef = getProductsCollectionRef();
-            if (!collectionRef) {
-                showScanStatus('Database not ready', true);
+                showStatus('Please enter a serial number', 'error');
                 return;
             }
 
-            const newDocRef = doc(collectionRef);
-            
-            const productData = {
-                code: productCode,
+            // Create serial entry
+            const entry = {
+                id: Date.now(),
                 serial: serialNumber,
-                timestamp: Timestamp.now(),
-                userId: userId,
+                date: new Date().toISOString(),
+                image: document.getElementById('captured-image').src
             };
 
-            try {
-                await setDoc(newDocRef, productData);
-                console.log("Product saved successfully:", productData);
-                showScanStatus('Full Inventory Item saved successfully!');
-                document.getElementById('product-code-input').value = '';
-                document.getElementById('serial-number-input').value = '';
-            } catch (error) {
-                console.error("Error saving product:", error);
-                showScanStatus('Error saving product', true);
-            }
-        };
-
-        // Function to save only the serial number as a log entry
-        window.saveSerialLog = async () => {
-            const serialNumber = document.getElementById('scanned-serial-log-input').value.trim();
+            // Add to array
+            serialNumbers.unshift(entry); // Add to beginning
             
-            if (!serialNumber) {
-                showScanStatus('No serial number scanned to save.', true);
-                return;
-            }
+            // Save to storage
+            saveToStorage();
 
-            const collectionRef = getProductsCollectionRef();
-            if (!collectionRef) {
-                showScanStatus('Database not ready', true);
-                return;
-            }
+            // Update display
+            displaySerials();
 
-            const newDocRef = doc(collectionRef);
+            // Reset view
+            document.getElementById('capture-view').classList.add('hidden');
+            document.getElementById('initial-view').classList.remove('hidden');
+            serialInput.value = '';
+
+            showStatus('Serial number saved successfully!', 'success');
             
-            const productData = {
-                code: 'SERIAL_LOG_ENTRY', // Use a fixed code for logging mode
-                serial: serialNumber,
-                timestamp: Timestamp.now(),
-                userId: userId,
-            };
-
-            try {
-                await setDoc(newDocRef, productData);
-                console.log("Serial Log saved successfully:", productData);
-                showScanStatus(`Serial Log Entry (${serialNumber}) saved successfully!`, false);
-                
-                // Clear and disable save button after successful save
-                document.getElementById('scanned-serial-log-input').value = '';
-                document.getElementById('save-serial-log-btn').disabled = true;
-                
-                // Keep the display visible for continuous logging
-                document.getElementById('serial-log-display').classList.remove('hidden'); 
-            } catch (error) {
-                console.error("Error saving serial log:", error);
-                showScanStatus('Error saving serial log', true);
+            // Vibrate if supported
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
             }
-        };
+        }
 
-        const setupProductListener = () => {
-            const collectionRef = getProductsCollectionRef();
-            if (!collectionRef) return;
+        // Display serials in table
+        function displaySerials(filter = '') {
+            const tbody = document.getElementById('serials-list');
+            const emptyState = document.getElementById('empty-state');
+            const totalCount = document.getElementById('total-count');
 
-            const q = query(collectionRef, orderBy("timestamp", "desc"));
-            const productListElement = document.getElementById('product-list');
-            const emptyStateElement = document.getElementById('empty-state');
-            const loadingIndicator = document.getElementById('loading-indicator');
+            tbody.innerHTML = '';
 
-            loadingIndicator.classList.remove('hidden');
-
-            onSnapshot(q, (snapshot) => {
-                productListElement.innerHTML = '';
-                let hasProducts = false;
-                
-                snapshot.forEach((doc) => {
-                    hasProducts = true;
-                    const data = doc.data();
-                    const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'N/A';
-                    
-                    const row = `
-                        <tr class="hover:bg-gray-50 transition duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${data.code === 'SERIAL_LOG_ENTRY' ? 'text-blue-600' : 'text-gray-900'}">${data.code || 'N/A'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${data.serial || 'N/A'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
-                        </tr>
-                    `;
-                    productListElement.innerHTML += row;
-                });
-                
-                loadingIndicator.classList.add('hidden');
-                emptyStateElement.classList.toggle('hidden', hasProducts);
-            }, (error) => {
-                console.error("Error setting up snapshot listener:", error);
-                loadingIndicator.classList.add('hidden');
-            });
-        };
-        
-        // --- Firebase Initialization and Authentication ---
-
-        const initFirebase = async () => {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase Auth Ready. User ID:", userId);
-                        document.getElementById('user-info').textContent = `User ID: ${userId}`;
-                        setupProductListener();
-                    } else {
-                        console.error("No user signed in.");
-                    }
-                });
-
-            } catch (error) {
-                console.error("Error initializing Firebase or authentication:", error);
-            }
-        };
-
-        // --- Camera Scanning Functions ---
-        
-        // Dedicated entry point for serial capture
-        window.startSerialCapture = () => {
-            isScanningSerial = true; // Using the new variable name
-            document.getElementById('serial-log-display').classList.remove('hidden');
-            document.getElementById('scanned-serial-log-input').value = 'Scanning...';
-            document.getElementById('save-serial-log-btn').disabled = true;
-            window.startCameraScan('serial');
-        };
-
-
-        window.setScannerMode = (mode) => {
-            if (isCameraScanning) {
-                showScanStatus('Please stop current scanner first', true);
-                return;
-            }
-            scannerMode = mode;
-            
-            const qrBtn = document.getElementById('qr-mode-btn');
-            const barcodeBtn = document.getElementById('barcode-mode-btn');
-            
-            if (mode === 'qr') {
-                qrBtn.classList.add('ring-4', 'ring-purple-300');
-                barcodeBtn.classList.remove('ring-4', 'ring-orange-300');
-                showScanStatus('QR Code mode selected');
-            } else {
-                barcodeBtn.classList.add('ring-4', 'ring-orange-300');
-                qrBtn.classList.remove('ring-4', 'ring-purple-300');
-                showScanStatus('Barcode mode selected (UPC, EAN, Code128)');
-            }
-        };
-
-        window.startCameraScan = async (mode = 'inventory') => {
-            const startBtn = document.getElementById('start-camera-button');
-            const serialBtn = document.getElementById('start-serial-scan-btn');
-            const stopBtn = document.getElementById('stop-camera-button');
-
-            if (isCameraScanning) {
-                showScanStatus('Scanner already running. Stop it before starting a new mode.', true);
-                return;
-            }
-
-            if (mode === 'inventory') {
-                startBtn.classList.add('hidden');
-                serialBtn.disabled = true;
-            } else { // serial capture mode
-                startBtn.disabled = true;
-                serialBtn.classList.add('hidden');
-            }
-
-            stopBtn.classList.remove('hidden');
-            isCameraScanning = true;
-
-            if (scannerMode === 'qr') {
-                await startQRScanner();
-            } else {
-                await startBarcodeScanner();
-            }
-        };
-
-        const startQRScanner = async () => {
-            const readerEl = document.getElementById('reader');
-
-            try {
-                readerEl.classList.remove('hidden');
-                
-                html5QrCode = new Html5Qrcode("reader");
-                
-                const config = { 
-                    fps: 10, 
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0
-                };
-
-                await html5QrCode.start(
-                    { facingMode: "environment" },
-                    config,
-                    (decodedText, decodedResult) => {
-                        console.log(`QR Scan successful: ${decodedText}`);
-                        handleScanResult(decodedText);
-                    },
-                    (errorMessage) => {
-                        // Scanning errors are normal, ignore them
-                    }
+            let filteredSerials = serialNumbers;
+            if (filter) {
+                filteredSerials = serialNumbers.filter(item => 
+                    item.serial.toLowerCase().includes(filter.toLowerCase())
                 );
-
-                showScanStatus('QR Scanner active - point at QR code');
-
-            } catch (error) {
-                console.error("Error starting QR scanner:", error);
-                showScanStatus('Error starting QR scanner: ' + error, true);
-                readerEl.classList.add('hidden');
-                resetScanButtons();
-            }
-        };
-
-        const startBarcodeScanner = async () => {
-            const scannerEl = document.getElementById('barcode-scanner');
-
-            try {
-                scannerEl.classList.remove('hidden');
-
-                await Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: scannerEl,
-                        constraints: {
-                            facingMode: "environment"
-                        }
-                    },
-                    decoder: {
-                        readers: [
-                            "code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", 
-                            "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"
-                        ]
-                    },
-                    locate: true,
-                    locator: { patchSize: "medium", halfSample: true },
-                    numOfWorkers: 4,
-                    frequency: 10
-                }, (err) => {
-                    if (err) {
-                        console.error("Quagga init error:", err);
-                        showScanStatus('Error starting barcode scanner: ' + err, true);
-                        scannerEl.classList.add('hidden');
-                        resetScanButtons();
-                        return;
-                    }
-                    
-                    Quagga.start();
-                    quaggaInitialized = true;
-                    showScanStatus('Barcode scanner active - point at barcode');
-                });
-
-                Quagga.onDetected((result) => {
-                    const code = result.codeResult.code;
-                    console.log(`Barcode detected: ${code}`);
-                    handleScanResult(code);
-                });
-
-            } catch (error) {
-                console.error("Error starting barcode scanner:", error);
-                showScanStatus('Error starting barcode scanner: ' + error, true);
-                scannerEl.classList.add('hidden');
-                resetScanButtons();
-            }
-        };
-
-        const resetScanButtons = () => {
-            const startBtn = document.getElementById('start-camera-button');
-            const serialBtn = document.getElementById('start-serial-scan-btn');
-            const stopBtn = document.getElementById('stop-camera-button');
-            
-            // Inventory button state
-            startBtn.classList.remove('hidden');
-            startBtn.disabled = false;
-            
-            // Serial Log button state
-            serialBtn.classList.remove('hidden');
-            serialBtn.disabled = false;
-
-            stopBtn.classList.add('hidden');
-            isCameraScanning = false;
-            isScanningSerial = false; // Using the new variable name
-        };
-
-        window.stopCameraScan = async () => {
-            if (!isCameraScanning) {
-                return;
             }
 
-            if (scannerMode === 'qr' && html5QrCode) {
-                await stopQRScanner();
-            } else if (scannerMode === 'barcode' && quaggaInitialized) {
-                await stopBarcodeScanner();
-            }
+            totalCount.textContent = serialNumbers.length;
 
-            // Capture the state before resetting the buttons
-            const wasScanningSerial = isScanningSerial; 
-            
-            resetScanButtons();
-            
-            // If we were in serial capture mode, prompt the user for the next action
-            if (wasScanningSerial) {
-                showScanStatus('Scan captured. Press SAVE to log or SCAN SERIAL NUMBER again.', false);
+            if (filteredSerials.length === 0) {
+                emptyState.classList.remove('hidden');
+                tbody.parentElement.classList.add('hidden');
             } else {
-                showScanStatus('Scanner stopped');
+                emptyState.classList.add('hidden');
+                tbody.parentElement.classList.remove('hidden');
+
+                filteredSerials.forEach((item, index) => {
+                    const date = new Date(item.date);
+                    const formattedDate = date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                    });
+                    const formattedTime = date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+
+                    const row = document.createElement('tr');
+                    row.className = 'serial-item hover:bg-purple-50 transition';
+                    row.innerHTML = `
+                        <td class="px-4 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
+                        <td class="px-4 py-4 text-sm font-mono font-semibold text-purple-700">${item.serial}</td>
+                        <td class="px-4 py-4 text-sm text-gray-600">
+                            <div>${formattedDate}</div>
+                            <div class="text-xs text-gray-500">${formattedTime}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm">
+                            <button onclick="viewImage(${item.id})" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mr-2 text-xs font-semibold transition">
+                                View
+                            </button>
+                            <button onclick="deleteSerial(${item.id})" 
+                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold transition">
+                                Delete
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
             }
-        };
+        }
 
-        const stopQRScanner = async () => {
-            const readerEl = document.getElementById('reader');
-            
-            try {
-                if (html5QrCode && html5QrCode.isScanning()) {
-                    await html5QrCode.stop();
-                }
-                html5QrCode.clear();
-                html5QrCode = null;
-                readerEl.classList.add('hidden');
-            } catch (error) {
-                // Ignore harmless "no running scanner" error
-                readerEl.classList.add('hidden');
+        // Search serials
+        function searchSerials() {
+            const searchTerm = document.getElementById('search-input').value;
+            displaySerials(searchTerm);
+        }
+
+        // View image
+        function viewImage(id) {
+            const item = serialNumbers.find(s => s.id === id);
+            if (item && item.image) {
+                const win = window.open();
+                win.document.write(`
+                    <html>
+                    <head><title>Serial: ${item.serial}</title></head>
+                    <body style="margin:0;display:flex;align-items:center;justify-content:center;background:#000;">
+                        <img src="${item.image}" style="max-width:100%;max-height:100vh;">
+                    </body>
+                    </html>
+                `);
             }
-        };
+        }
 
-        const stopBarcodeScanner = async () => {
-            const scannerEl = document.getElementById('barcode-scanner');
-            
-            try {
-                Quagga.stop();
-                Quagga.offDetected();
-                quaggaInitialized = false;
-                scannerEl.classList.add('hidden');
-            } catch (error) {
-                console.error("Error stopping barcode scanner:", error);
-                scannerEl.classList.add('hidden');
+        // Delete serial
+        function deleteSerial(id) {
+            if (confirm('Are you sure you want to delete this serial number?')) {
+                serialNumbers = serialNumbers.filter(s => s.id !== id);
+                saveToStorage();
+                displaySerials();
+                showStatus('Serial number deleted', 'success');
             }
-        };
+        }
 
-        // --- Web Bluetooth API Functions ---
-
-        const BARCODE_SERVICE_UUID = '00001234-0000-1000-8000-00805f9b34fb'; 
-        const PRODUCT_CODE_CHAR_UUID = '00005678-0000-1000-8000-00805f9b34fb';
-
-        const handleCharacteristicChange = (event) => {
-            const value = event.target.value; 
-            const decoder = new TextDecoder('utf-8');
-            const dataString = decoder.decode(value.buffer);
-            
-            console.log(`Received data from BLE: ${dataString}`);
-            
-            // Pass BLE scan result to the generic handler
-            if (event.target.uuid === PRODUCT_CODE_CHAR_UUID) {
-                const productCode = dataString.trim();
-                if (productCode) {
-                    handleScanResult(productCode);
-                }
-            }
-        };
-
-        window.connectScanner = async () => {
-            if (!('bluetooth' in navigator)) {
-                showScanStatus("Web Bluetooth not supported in this browser", true);
+        // Clear all serials
+        function clearAllSerials() {
+            if (serialNumbers.length === 0) {
+                showStatus('No serials to clear', 'error');
                 return;
             }
 
-            try {
-                updateStatus(false, "Connecting...");
-
-                scannerDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [BARCODE_SERVICE_UUID] }]
-                });
-                
-                updateStatus(true, scannerDevice.name);
-                scannerDevice.addEventListener('gattserverdisconnected', () => {
-                    updateStatus(false);
-                });
-
-                const server = await scannerDevice.gatt.connect();
-                const service = await server.getPrimaryService(BARCODE_SERVICE_UUID);
-                const productCodeCharacteristic = await service.getCharacteristic(PRODUCT_CODE_CHAR_UUID);
-                
-                await productCodeCharacteristic.startNotifications();
-                productCodeCharacteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
-
-            } catch (error) {
-                updateStatus(false);
-                console.error("Bluetooth connection error:", error);
-                showScanStatus(`BLE Error: ${error.message}`, true);
+            if (confirm(`Are you sure you want to delete all ${serialNumbers.length} serial numbers? This cannot be undone.`)) {
+                serialNumbers = [];
+                saveToStorage();
+                displaySerials();
+                showStatus('All serial numbers cleared', 'success');
             }
-        };
+        }
 
-        // Initialize Firebase on window load
-        window.onload = initFirebase;
+        // Export to CSV
+        function exportToCSV() {
+            if (serialNumbers.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+
+            let csv = 'Serial Number,Date,Time\n';
+            serialNumbers.forEach(item => {
+                const date = new Date(item.date);
+                const dateStr = date.toLocaleDateString('en-US');
+                const timeStr = date.toLocaleTimeString('en-US');
+                csv += `"${item.serial}","${dateStr}","${timeStr}"\n`;
+            });
+
+            downloadFile(csv, `serial_numbers_${Date.now()}.csv`, 'text/csv');
+            showStatus('CSV exported successfully!', 'success');
+        }
+
+        // Export to JSON
+        function exportToJSON() {
+            if (serialNumbers.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+
+            const json = JSON.stringify(serialNumbers, null, 2);
+            downloadFile(json, `serial_numbers_${Date.now()}.json`, 'application/json');
+            showStatus('JSON exported successfully!', 'success');
+        }
+
+        // Download file helper
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            statusEl.classList.remove('hidden', 'bg-blue-100', 'text-blue-700', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+            
+            if (type === 'success') {
+                statusEl.classList.add('bg-green-100', 'text-green-700');
+            } else if (type === 'error') {
+                statusEl.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                statusEl.classList.add('bg-blue-100', 'text-blue-700');
+            }
+
+            statusEl.classList.remove('hidden');
+
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 3000);
+        }
     </script>
+
 </body>
 </html>
